@@ -8,7 +8,7 @@
     <name>CodeComparer</name>
 
     <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
-    <vendor email="support@yourcompany.com" url="https://www.yourcompany.com">Valentina Gutierrez Rivas</vendor>
+    <vendor email="k12019959@students.jku">Valentina Gutierrez Rivas</vendor>
 
     <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
@@ -27,17 +27,24 @@
     <!-- Product and plugin compatibility requirements.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
 
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-
     </extensions>
+
+    <projectListeners>
+        <listener class="com.thesis.codecomparer.DebuggerManagerListener"
+                  topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
+    </projectListeners>
+
     <actions>
-        <action id="com.thesis.codecomparer.StartCodeComparer" class="com.thesis.codecomparer.StartCodeComparer"
-                text="Start CodeComparer"
-                description="Java code version comparison tool">
-            <add-to-group group-id="ToolsMenu" anchor="first"/>
-        </action>
+        <group id="CodeComparer.VisualizerToolbar" popup="false">
+            <action id="StartCodeComparer" class="com.thesis.codecomparer.StartCodeComparer"
+                    text="Start CodeComparer"
+                    description="Java code version comparison tool">
+            </action>
+        </group>
     </actions>
 </idea-plugin>
