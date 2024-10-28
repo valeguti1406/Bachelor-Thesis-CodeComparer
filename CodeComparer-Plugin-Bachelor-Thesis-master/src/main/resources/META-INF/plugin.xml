@@ -42,8 +42,7 @@
     <actions>
         <group id="CodeComparer.VisualizerToolbar" popup="false">
             <action id="StartCodeComparer" class="com.thesis.codecomparer.StartCodeComparer"
-                    text="Start CodeComparer"
-                    description="Java code version comparison tool">
+                    text="Start Saving Variable States with CodeComparer">
             </action>
         </group>
     </actions>

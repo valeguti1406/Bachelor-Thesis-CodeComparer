@@ -10,5 +10,5 @@ public class CodeComparerIcons {
   }
 
   public static final Icon DIFF_ICON =
-      IconLoader.getIcon("icons/diff.png", CodeComparerIcons.class);
+      IconLoader.getIcon("icons/diff.svg", CodeComparerIcons.class);
 }
