@@ -7,6 +7,7 @@ import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.ui.RunnerLayoutUi;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.util.ui.UIUtil;
@@ -53,10 +54,11 @@ public class DebugSessionListener implements XDebugSessionListener {
 
   @Override
   public void sessionPaused() {
+    LOGGER.warn("Debugger paused");
     this.getBreakpointStates();
   }
 
-  private void getBreakpointStates() {
+ private void getBreakpointStates() {
 
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
 
@@ -64,7 +66,24 @@ public class DebugSessionListener implements XDebugSessionListener {
         new BreakpointStateCollector(stackFrame, 3 /*TODO: make config for this*/);
     String collectedState = breakpointStateCollector.analyzeStackFrame();
 
-    displayStateInPanel(collectedState);
+    //displayStateInPanel(collectedState);
+
+    // TODO: method extraction
+    //now we are on the breakpoint line that has the method/Library call
+    //we need to step into it, to get the method information and then step out
+    LOGGER.warn("Trying to step into");
+    //To ensure that it runs on the EDT
+    ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
+    LOGGER.warn("After step into");
+
+    JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
+    if (javaStackFrame != null) {
+      displayStateInPanel(breakpointStateCollector.getMethodInfo(javaStackFrame));
+    }
+
+    LOGGER.warn("Trying to step out");
+    ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
+    LOGGER.warn("After to step out");
 
     // get fileName and current line and save states in file
     if (debugSession.getCurrentPosition() != null) {
@@ -72,7 +91,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       int line = debugSession.getCurrentPosition().getLine() + 1;
       saveStateToFile(collectedState, fileName, line);
     }
-  }
+}
 
   @NotNull private StackFrameProxyImpl getStackFrameProxy() {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
@@ -145,7 +164,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       writer.write("\n====================\n"); // Separate different breakpoints
       LOGGER.warn("Successfully saved collected state to file: " + filePath);
 
-      //TODO: states seemed to be saved in file and directory created but where?
+      // TODO: states seemed to be saved in file and directory created but where?
     } catch (IOException e) {
       LOGGER.error("Error saving collected state to file", e);
     }

@@ -1,5 +1,6 @@
 package com.thesis.codecomparer;
 
+import com.intellij.debugger.engine.JavaStackFrame;
 import com.intellij.debugger.engine.evaluation.EvaluateException;
 import com.intellij.debugger.jdi.LocalVariableProxyImpl;
 import com.intellij.debugger.jdi.StackFrameProxyImpl;
@@ -47,6 +48,86 @@ public class BreakpointStateCollector {
     }
   }
 
+  /*
+   Extract from the Method (Library Call), the inputs and outputs
+  */
+  public String getMethodInfo(@NotNull JavaStackFrame currentStackFrame) {
+    LOGGER.warn("in getMethodInfo");
+    StringBuilder sb = new StringBuilder("------- Method info: ---------");
+    sb.append("\n");
+    try {
+      Method currentMethod = currentStackFrame.getStackFrameProxy().location().method();
+      LOGGER.warn("method name : " + currentMethod.name());
+      sb.append("name: ").append(currentMethod.name()).append("\n");
+
+      Type returnType = currentMethod.returnType();
+      LOGGER.warn("Return Type: " + returnType);
+      sb.append("Return Type: ").append(returnType).append("\n");
+
+      // I just get the method signature, and not the variable that is getting returned, so name and value don't make sense here
+      //TODO: get the return value
+      /*if (! returnType.toString().equals("void")) {
+        String returnName = returnType.name();
+        LOGGER.warn("Return Name: " + returnName);
+        sb.append("Return Name: ").append(returnName).append("\n");
+
+        LOGGER.warn("Trying to get value from stackframe ");
+        LocalVariableProxyImpl returnVariable =
+            currentStackFrame.getStackFrameProxy().visibleVariableByName(returnName);
+        LOGGER.warn("Local return variable  " + returnVariable);
+        LOGGER.warn("Getting eturn Value");
+        Value returnValue = stackFrame.getValue(returnVariable);
+        LOGGER.warn("Return Value: " + returnValue);
+        sb.append("Return Value: ").append(returnValue).append("\n");
+      }*/
+
+      extractArgumentsInfo(currentStackFrame,currentMethod,sb);
+
+      return sb.toString();
+    } catch (EvaluateException e) {
+      LOGGER.warn("Current method could not be found!");
+      throw new RuntimeException(e);
+    } catch (ClassNotLoadedException e) {
+      LOGGER.warn("Getting the return type of the current method was not possible");
+        throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Get type, name and value of the arguments of a method and add this information to the string builder
+   */
+  private StringBuilder extractArgumentsInfo (JavaStackFrame currentStackFrame, Method currentMethod, StringBuilder sb){
+    try {
+      List<LocalVariable> methodArguments = currentMethod.arguments();
+      for (LocalVariable argument : methodArguments) {
+
+        Type argumentTYpe = argument.type();
+        LOGGER.warn("Parameter Type:" + argumentTYpe);
+        sb.append("Parameter Type: ").append(argumentTYpe).append("\n");
+
+        String argumentName = argument.name();
+        LOGGER.warn("Parameter Name: " + argumentName);
+        sb.append("Parameter Name: ").append(argumentName).append("\n");
+
+        LocalVariableProxyImpl argumentLocalVariable =
+                currentStackFrame.getStackFrameProxy().visibleVariableByName(argumentName);
+        Value argumentValue = stackFrame.getValue(argumentLocalVariable);
+        LOGGER.warn("Parameter Value: " + argumentValue);
+        sb.append("Parameter Value: ").append(argumentValue).append("\n");
+      }
+    } catch (AbsentInformationException e) {
+      LOGGER.warn("Getting Method Arguments was not possible");
+      throw new RuntimeException(e);
+    } catch (ClassNotLoadedException e) {
+      LOGGER.warn("Getting Argument type was not possible");
+      throw new RuntimeException(e);
+    } catch (EvaluateException e) {
+      LOGGER.warn("Getting variable of Stack Frame was not possible");
+        throw new RuntimeException(e);
+    }
+    return sb;
+  }
+
   // Analyze the 'this' object in the stack frame
   private void analyzeThisObject(@NotNull StackFrameProxyImpl stackFrame) throws EvaluateException {
     final ObjectReference thisObjectReference = stackFrame.thisObject();
@@ -61,6 +142,7 @@ public class BreakpointStateCollector {
   // Analyze all variables that are in scope for the given stack frame
   private void analyzeVariablesInScope(@NotNull StackFrameProxyImpl stackFrame)
       throws EvaluateException {
+
     List<LocalVariableProxyImpl> methodVariables = stackFrame.visibleVariables();
     for (LocalVariableProxyImpl localVariable : methodVariables) {
       Value variableValue = stackFrame.getValue(localVariable);
