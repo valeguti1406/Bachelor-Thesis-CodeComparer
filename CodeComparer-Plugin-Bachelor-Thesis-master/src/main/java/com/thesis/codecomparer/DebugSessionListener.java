@@ -63,28 +63,29 @@ public class DebugSessionListener implements XDebugSessionListener {
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
 
     BreakpointStateCollector breakpointStateCollector =
-        new BreakpointStateCollector(stackFrame, 3 /*TODO: make config for this*/);
+        new BreakpointStateCollector(stackFrame, 3);
     String collectedState = breakpointStateCollector.analyzeStackFrame();
 
     //displayStateInPanel(collectedState);
 
-    // TODO: method extraction
+   //TODO: how to do step into and step out without generating cascade of in and out (just once)
     //now we are on the breakpoint line that has the method/Library call
     //we need to step into it, to get the method information and then step out
-    LOGGER.warn("Trying to step into");
+    /*LOGGER.warn("Trying to step into");
     //To ensure that it runs on the EDT
     ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
-    LOGGER.warn("After step into");
+    LOGGER.warn("After step into");*/
 
     JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (javaStackFrame != null) {
       displayStateInPanel(breakpointStateCollector.getMethodInfo(javaStackFrame));
     }
 
+    /*
     LOGGER.warn("Trying to step out");
     ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
     LOGGER.warn("After to step out");
-
+    */
     // get fileName and current line and save states in file
     if (debugSession.getCurrentPosition() != null) {
       String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
