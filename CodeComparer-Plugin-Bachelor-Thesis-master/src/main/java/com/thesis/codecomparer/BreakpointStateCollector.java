@@ -52,20 +52,17 @@ public class BreakpointStateCollector {
    Extract from the Method (Library Call), the inputs and outputs
   */
   public String getMethodInfo(@NotNull JavaStackFrame currentStackFrame) {
-    LOGGER.warn("in getMethodInfo");
-    StringBuilder sb = new StringBuilder("------- Method info: ---------");
-    sb.append("\n");
+    stateInfoBuilder.append("------- Method info: ---------").append("\n");
     try {
       Method currentMethod = currentStackFrame.getStackFrameProxy().location().method();
-      LOGGER.warn("method name : " + currentMethod.name());
-      sb.append("name: ").append(currentMethod.name()).append("\n");
+      stateInfoBuilder.append("Name: ").append(currentMethod.name()).append("\n");
 
       Type returnType = currentMethod.returnType();
-      LOGGER.warn("Return Type: " + returnType);
-      sb.append("Return Type: ").append(returnType).append("\n");
+      stateInfoBuilder.append("Return Type: ").append(returnType).append("\n").append("\n");
 
-      // I just get the method signature, and not the variable that is getting returned, so name and value don't make sense here
-      //TODO: get the return value
+      // I just get the method signature, and not the variable that is getting returned, so name and
+      // value don't make sense here
+      // TODO: get the return value
       /*if (! returnType.toString().equals("void")) {
         String returnName = returnType.name();
         LOGGER.warn("Return Name: " + returnName);
@@ -81,39 +78,38 @@ public class BreakpointStateCollector {
         sb.append("Return Value: ").append(returnValue).append("\n");
       }*/
 
-      extractArgumentsInfo(currentStackFrame,currentMethod,sb);
+      extractArgumentsInfo(currentStackFrame, currentMethod);
 
-      return sb.toString();
+      return stateInfoBuilder.toString();
     } catch (EvaluateException e) {
       LOGGER.warn("Current method could not be found!");
       throw new RuntimeException(e);
     } catch (ClassNotLoadedException e) {
       LOGGER.warn("Getting the return type of the current method was not possible");
-        throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
   }
 
   /**
-   * Get type, name and value of the arguments of a method and add this information to the string builder
+   * Get type, name and value of the arguments of a method and add this information to the string
+   * builder
    */
-  private StringBuilder extractArgumentsInfo (JavaStackFrame currentStackFrame, Method currentMethod, StringBuilder sb){
+  private void extractArgumentsInfo(JavaStackFrame currentStackFrame, Method currentMethod) {
     try {
       List<LocalVariable> methodArguments = currentMethod.arguments();
+      if (!methodArguments.isEmpty()) { stateInfoBuilder.append("--- Method Arguments: ---").append("\n");}
       for (LocalVariable argument : methodArguments) {
 
-        Type argumentTYpe = argument.type();
-        LOGGER.warn("Parameter Type:" + argumentTYpe);
-        sb.append("Parameter Type: ").append(argumentTYpe).append("\n");
+        //Type argumentType = argument.type();
+        //stateInfoBuilder.append("Parameter Type: ").append(argumentTYpe).append("\n");
 
         String argumentName = argument.name();
-        LOGGER.warn("Parameter Name: " + argumentName);
-        sb.append("Parameter Name: ").append(argumentName).append("\n");
+        //stateInfoBuilder.append("Parameter Name: ").append(argumentName).append("\n");
 
         LocalVariableProxyImpl argumentLocalVariable =
-                currentStackFrame.getStackFrameProxy().visibleVariableByName(argumentName);
+            currentStackFrame.getStackFrameProxy().visibleVariableByName(argumentName);
         Value argumentValue = stackFrame.getValue(argumentLocalVariable);
-        LOGGER.warn("Parameter Value: " + argumentValue);
-        sb.append("Parameter Value: ").append(argumentValue).append("\n");
+        extractVariableInfo(argumentValue, argument.name(), argument.type(), 3);
       }
     } catch (AbsentInformationException e) {
       LOGGER.warn("Getting Method Arguments was not possible");
@@ -123,14 +119,19 @@ public class BreakpointStateCollector {
       throw new RuntimeException(e);
     } catch (EvaluateException e) {
       LOGGER.warn("Getting variable of Stack Frame was not possible");
-        throw new RuntimeException(e);
+      throw new RuntimeException(e);
     }
-    return sb;
   }
 
   // Analyze the 'this' object in the stack frame
-  private void analyzeThisObject(@NotNull StackFrameProxyImpl stackFrame) throws EvaluateException {
-    final ObjectReference thisObjectReference = stackFrame.thisObject();
+  private void analyzeThisObject(@NotNull StackFrameProxyImpl stackFrame){
+    final ObjectReference thisObjectReference;
+    try {
+      thisObjectReference = stackFrame.thisObject();
+    } catch (EvaluateException e) {
+      LOGGER.warn("Getting the 'this' object was not possible");
+      throw new RuntimeException(e);
+    }
     if (thisObjectReference == null) {
       stateInfoBuilder.append("this object was null!\n");
       return;
@@ -172,11 +173,11 @@ public class BreakpointStateCollector {
     // Get object type and append information
     String objectType = objectReference.referenceType().name();
     stateInfoBuilder
-        .append("Exploring object: ")
+        .append("Name: ")
         .append(objectName)
         .append(", of type: ")
         .append(objectType)
-        .append("\n");
+        .append("\n").append("\n");
 
     if (objectReference instanceof ArrayReference arrayReference) {
       this.appendArrayValues(arrayReference, remainingDepth);
@@ -186,6 +187,7 @@ public class BreakpointStateCollector {
     // Get and iterate over all fields of the object
     Map<Field, Value> fields =
         objectReference.getValues(objectReference.referenceType().allFields());
+    if (!fields.isEmpty()) { stateInfoBuilder.append("--- Object fields: ---").append("\n");}
     for (Map.Entry<Field, Value> entry : fields.entrySet()) {
       String fieldName = entry.getKey().name();
 
@@ -194,8 +196,7 @@ public class BreakpointStateCollector {
           .append("Field: ")
           .append(fieldName)
           .append(", of type: ")
-          .append(entry.getKey().typeName())
-          .append("\n");
+          .append(entry.getKey().typeName());
       this.appendValue(entry.getValue(), fieldName, remainingDepth - 1);
     }
   }
@@ -211,13 +212,41 @@ public class BreakpointStateCollector {
   }
 
   private void appendValue(
-      final Value variableValue, String variableName, int remainingDepthToBeExplored) {
+      final Value variableValue, final String variableName, int remainingDepthToBeExplored) {
     if (variableValue == null) {
       stateInfoBuilder.append(" is null\n");
     } else if (variableValue instanceof PrimitiveValue) {
-      stateInfoBuilder.append(", with value: ").append(variableValue).append("\n");
+      stateInfoBuilder.append(", with value: ").append(variableValue).append("\n\n");
     } else if (variableValue instanceof StringReference stringReference) {
-      stateInfoBuilder.append(", with value: ").append(stringReference.value()).append("\n");
+      stateInfoBuilder.append(", with value: ").append(stringReference.value()).append("\n\n");
+    } else { // If the field is an object reference, explore it recursively
+      final ObjectReference obj = (ObjectReference) variableValue;
+      this.exploreObject(obj, variableName, remainingDepthToBeExplored);
+    }
+  }
+
+  private void  extractVariableInfo(
+          final Value variableValue, final String variableName, final Type type, int remainingDepthToBeExplored) {
+    if (variableValue == null) {
+      stateInfoBuilder.append("This variable is null\n");
+    } else if (variableValue instanceof PrimitiveValue) {
+      stateInfoBuilder
+              .append("Name: ")
+              .append(variableName)
+              .append(", with type: ")
+              .append(type)
+              .append(", with value: ")
+              .append(variableValue)
+              .append("\n\n");
+    } else if (variableValue instanceof StringReference stringReference) {
+      stateInfoBuilder
+              .append("Name: ")
+              .append(variableName)
+              .append(", with type: ")
+              .append(type)
+              .append(", with value: ")
+              .append(stringReference.value())
+              .append("\n\n");
     } else { // If the field is an object reference, explore it recursively
       final ObjectReference obj = (ObjectReference) variableValue;
       this.exploreObject(obj, variableName, remainingDepthToBeExplored);

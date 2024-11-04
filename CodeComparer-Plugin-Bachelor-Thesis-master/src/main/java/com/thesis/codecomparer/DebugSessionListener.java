@@ -7,7 +7,6 @@ import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.ui.RunnerLayoutUi;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
-import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.util.ui.UIUtil;
@@ -58,19 +57,17 @@ public class DebugSessionListener implements XDebugSessionListener {
     this.getBreakpointStates();
   }
 
- private void getBreakpointStates() {
+  private void getBreakpointStates() {
 
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
 
-    BreakpointStateCollector breakpointStateCollector =
-        new BreakpointStateCollector(stackFrame, 3);
-    String collectedState = breakpointStateCollector.analyzeStackFrame();
+    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
+    //String collectedState = breakpointStateCollector.analyzeStackFrame();
+    // displayStateInPanel(collectedState);
 
-    //displayStateInPanel(collectedState);
-
-   //TODO: how to do step into and step out without generating cascade of in and out (just once)
-    //now we are on the breakpoint line that has the method/Library call
-    //we need to step into it, to get the method information and then step out
+    // TODO: how to do step into and step out without generating cascade of in and out (just once)
+    // now we are on the breakpoint line that has the method/Library call
+    // we need to step into it, to get the method information and then step out
     /*LOGGER.warn("Trying to step into");
     //To ensure that it runs on the EDT
     ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
@@ -78,7 +75,17 @@ public class DebugSessionListener implements XDebugSessionListener {
 
     JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (javaStackFrame != null) {
-      displayStateInPanel(breakpointStateCollector.getMethodInfo(javaStackFrame));
+      StringBuilder infoToDisplay = new StringBuilder();
+      // get fileName and current line and save states in file
+      if (debugSession.getCurrentPosition() != null) {
+        String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
+        int line = debugSession.getCurrentPosition().getLine() + 1;
+        infoToDisplay.append("File name: ").append(fileName).append("\n");
+        infoToDisplay.append("Line: ").append(line).append("\n\n");
+        //saveStateToFile(collectedState, fileName, line);
+      }
+      infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame));
+      displayStateInPanel(infoToDisplay.toString());
     }
 
     /*
@@ -86,13 +93,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
     LOGGER.warn("After to step out");
     */
-    // get fileName and current line and save states in file
-    if (debugSession.getCurrentPosition() != null) {
-      String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
-      int line = debugSession.getCurrentPosition().getLine() + 1;
-      saveStateToFile(collectedState, fileName, line);
-    }
-}
+  }
 
   @NotNull private StackFrameProxyImpl getStackFrameProxy() {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
@@ -145,11 +146,12 @@ public class DebugSessionListener implements XDebugSessionListener {
     final RunnerLayoutUi ui = this.debugSession.getUI();
     final var content =
         ui.createContent(
-            CONTENT_ID, uiContainer, "Start CodeComparer", CodeComparerIcons.DIFF_ICON, null);
+            CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
     content.setCloseable(false);
     UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
   }
 
+  //TODO: make file saving work
   private void saveStateToFile(String state, String fileName, int line) {
     String directoryPath = "CodeComparer-Plugin/output";
     File outputDir = new File(directoryPath);
