@@ -33,7 +33,12 @@ public class DebugSessionListener implements XDebugSessionListener {
 
   private final XDebugSession debugSession;
 
+  private final String outputDirectoryPath = "CodeComparer-Plugin/output";
+  private final String outputFileName = "collected_states.txt";
+  private File outputFile;
+
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
+    createOutputFile();
     this.debugSession = debugProcess.getSession();
     debugProcess
         .getProcessHandler()
@@ -44,6 +49,27 @@ public class DebugSessionListener implements XDebugSessionListener {
                 DebugSessionListener.this.initUI();
               }
             });
+  }
+
+  private void createOutputFile() {
+    String directoryPath = outputDirectoryPath;
+    File outputDir = new File(directoryPath);
+    if (!outputDir.exists()) {
+      boolean dirCreated = outputDir.mkdirs(); // Create the directory if it doesn't exist
+      LOGGER.warn("Created directory? " + dirCreated);
+    }
+
+    String filePath = directoryPath + "/" + outputFileName;
+    outputFile = new File(filePath);
+
+    // Empty the file if it exists
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, false))) {
+      // Empty the file by writing nothing
+      writer.write("");
+      LOGGER.warn("Emptied the collected states file: " + outputFile.getAbsolutePath());
+    } catch (IOException e) {
+      LOGGER.error("Error emptying the collected state file", e);
+    }
   }
 
   @Override
@@ -62,7 +88,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
 
     BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
-    //String collectedState = breakpointStateCollector.analyzeStackFrame();
+    // String collectedState = breakpointStateCollector.analyzeStackFrame();
     // displayStateInPanel(collectedState);
 
     // TODO: how to do step into and step out without generating cascade of in and out (just once)
@@ -82,9 +108,9 @@ public class DebugSessionListener implements XDebugSessionListener {
         int line = debugSession.getCurrentPosition().getLine() + 1;
         infoToDisplay.append("File name: ").append(fileName).append("\n");
         infoToDisplay.append("Line: ").append(line).append("\n\n");
-        //saveStateToFile(collectedState, fileName, line);
       }
-      infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame));
+      infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
+      infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
       displayStateInPanel(infoToDisplay.toString());
     }
 
@@ -151,25 +177,13 @@ public class DebugSessionListener implements XDebugSessionListener {
     UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
   }
 
-  //TODO: make file saving work
-  private void saveStateToFile(String state, String fileName, int line) {
-    String directoryPath = "CodeComparer-Plugin/output";
-    File outputDir = new File(directoryPath);
-    if (!outputDir.exists()) {
-      boolean dirCreated = outputDir.mkdirs(); // Create the directory if it doesn't exist
-      LOGGER.warn("Created directory? " + dirCreated);
-    }
-
-    String filePath = directoryPath + "/collected_states.txt";
-    try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, true))) {
-      writer.write("File: " + fileName + ", Line: " + line + "\n");
+  private String saveStateToFile(String state) {
+    try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, true))) {
       writer.write(state);
       writer.write("\n====================\n"); // Separate different breakpoints
-      LOGGER.warn("Successfully saved collected state to file: " + filePath);
-
-      // TODO: states seemed to be saved in file and directory created but where?
+      return "Successfully saved collected state to file: " + outputFile.getAbsolutePath();
     } catch (IOException e) {
-      LOGGER.error("Error saving collected state to file", e);
+      return "Error saving collected state to file";
     }
   }
 }

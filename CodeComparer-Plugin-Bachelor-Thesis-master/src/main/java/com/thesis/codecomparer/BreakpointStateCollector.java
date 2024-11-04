@@ -97,14 +97,16 @@ public class BreakpointStateCollector {
   private void extractArgumentsInfo(JavaStackFrame currentStackFrame, Method currentMethod) {
     try {
       List<LocalVariable> methodArguments = currentMethod.arguments();
-      if (!methodArguments.isEmpty()) { stateInfoBuilder.append("--- Method Arguments: ---").append("\n");}
+      if (!methodArguments.isEmpty()) {
+        stateInfoBuilder.append("--- Method Arguments: ---").append("\n");
+      }
       for (LocalVariable argument : methodArguments) {
 
-        //Type argumentType = argument.type();
-        //stateInfoBuilder.append("Parameter Type: ").append(argumentTYpe).append("\n");
+        // Type argumentType = argument.type();
+        // stateInfoBuilder.append("Parameter Type: ").append(argumentTYpe).append("\n");
 
         String argumentName = argument.name();
-        //stateInfoBuilder.append("Parameter Name: ").append(argumentName).append("\n");
+        // stateInfoBuilder.append("Parameter Name: ").append(argumentName).append("\n");
 
         LocalVariableProxyImpl argumentLocalVariable =
             currentStackFrame.getStackFrameProxy().visibleVariableByName(argumentName);
@@ -124,7 +126,7 @@ public class BreakpointStateCollector {
   }
 
   // Analyze the 'this' object in the stack frame
-  private void analyzeThisObject(@NotNull StackFrameProxyImpl stackFrame){
+  private void analyzeThisObject(@NotNull StackFrameProxyImpl stackFrame) {
     final ObjectReference thisObjectReference;
     try {
       thisObjectReference = stackFrame.thisObject();
@@ -177,7 +179,8 @@ public class BreakpointStateCollector {
         .append(objectName)
         .append(", of type: ")
         .append(objectType)
-        .append("\n").append("\n");
+        .append("\n")
+        .append("\n");
 
     if (objectReference instanceof ArrayReference arrayReference) {
       this.appendArrayValues(arrayReference, remainingDepth);
@@ -187,7 +190,9 @@ public class BreakpointStateCollector {
     // Get and iterate over all fields of the object
     Map<Field, Value> fields =
         objectReference.getValues(objectReference.referenceType().allFields());
-    if (!fields.isEmpty()) { stateInfoBuilder.append("--- Object fields: ---").append("\n");}
+    if (!fields.isEmpty()) {
+      stateInfoBuilder.append("--- Object fields: ---").append("\n");
+    }
     for (Map.Entry<Field, Value> entry : fields.entrySet()) {
       String fieldName = entry.getKey().name();
 
@@ -225,28 +230,31 @@ public class BreakpointStateCollector {
     }
   }
 
-  private void  extractVariableInfo(
-          final Value variableValue, final String variableName, final Type type, int remainingDepthToBeExplored) {
+  private void extractVariableInfo(
+      final Value variableValue,
+      final String variableName,
+      final Type type,
+      int remainingDepthToBeExplored) {
     if (variableValue == null) {
       stateInfoBuilder.append("This variable is null\n");
     } else if (variableValue instanceof PrimitiveValue) {
       stateInfoBuilder
-              .append("Name: ")
-              .append(variableName)
-              .append(", with type: ")
-              .append(type)
-              .append(", with value: ")
-              .append(variableValue)
-              .append("\n\n");
+          .append("Name: ")
+          .append(variableName)
+          .append(", with type: ")
+          .append(type)
+          .append(", with value: ")
+          .append(variableValue)
+          .append("\n\n");
     } else if (variableValue instanceof StringReference stringReference) {
       stateInfoBuilder
-              .append("Name: ")
-              .append(variableName)
-              .append(", with type: ")
-              .append(type)
-              .append(", with value: ")
-              .append(stringReference.value())
-              .append("\n\n");
+          .append("Name: ")
+          .append(variableName)
+          .append(", with type: ")
+          .append(type)
+          .append(", with value: ")
+          .append(stringReference.value())
+          .append("\n\n");
     } else { // If the field is an object reference, explore it recursively
       final ObjectReference obj = (ObjectReference) variableValue;
       this.exploreObject(obj, variableName, remainingDepthToBeExplored);
