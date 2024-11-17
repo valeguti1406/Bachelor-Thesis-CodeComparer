@@ -1,10 +1,12 @@
 package com.thesis.codecomparer;
 
+import com.intellij.debugger.engine.DebugProcessImpl;
 import com.intellij.debugger.engine.JavaStackFrame;
 import com.intellij.debugger.engine.evaluation.EvaluateException;
 import com.intellij.debugger.jdi.LocalVariableProxyImpl;
 import com.intellij.debugger.jdi.StackFrameProxyImpl;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.util.Pair;
 import com.sun.jdi.*;
 import java.util.HashSet;
 import java.util.List;
@@ -88,6 +90,36 @@ public class BreakpointStateCollector {
       LOGGER.warn("Getting the return type of the current method was not possible");
       throw new RuntimeException(e);
     }
+  }
+
+  private static DebugProcessImpl getDebugProcess(JavaStackFrame javaStackFrame) {
+    try {
+      // Get the class of the JavaStackFrame instance
+      Class<?> clazz = javaStackFrame.getClass();
+
+      // Find the private field "myDebugProcess"
+      java.lang.reflect.Field debugProcessField = clazz.getDeclaredField("myDebugProcess");
+
+      // Make it accessible
+      debugProcessField.setAccessible(true);
+
+      // Get the value of the field from the given instance
+      return (DebugProcessImpl) debugProcessField.get(javaStackFrame);
+    } catch (Exception e) {
+      LOGGER.warn("Failed to access myDebugProcess");
+      throw new RuntimeException("Failed to access myDebugProcess", e);
+    }
+  }
+
+  public String getReturnValue(JavaStackFrame javaStackFrame) {
+    LOGGER.warn("In getReturnValue");
+    Pair<Method, Value> methodValuePair = getDebugProcess(javaStackFrame).getLastExecutedMethod();
+    if (methodValuePair != null) {
+      Value returnValue = methodValuePair.getSecond();
+      stateInfoBuilder.append("returnValue: ").append("\n");
+      appendValue(returnValue, "returnValue", 2);
+    }
+    return stateInfoBuilder.toString();
   }
 
   /**

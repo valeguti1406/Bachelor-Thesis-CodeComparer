@@ -7,6 +7,7 @@ import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.ui.RunnerLayoutUi;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
 import com.intellij.util.ui.UIUtil;
@@ -19,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -37,6 +39,9 @@ public class DebugSessionListener implements XDebugSessionListener {
   private final String outputFileName = "collected_states.txt";
   private File outputFile;
 
+  private boolean stepedOver = false;
+
+
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
     createOutputFile();
     this.debugSession = debugProcess.getSession();
@@ -50,6 +55,23 @@ public class DebugSessionListener implements XDebugSessionListener {
               }
             });
   }
+
+  @Override
+  public void sessionPaused() {
+    LOGGER.warn("Debugger paused");
+    this.getBreakpointStates();
+  }
+
+  @Override
+  public void sessionResumed() {
+    LOGGER.warn("Debugger resumed");
+  }
+
+  @Override
+  public void sessionStopped() {
+    LOGGER.warn("Debugger stopped");
+  }
+
 
   private void createOutputFile() {
     String directoryPath = outputDirectoryPath;
@@ -72,32 +94,11 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  @Override
-  public void sessionStopped() {
-    LOGGER.warn("Debugger stoped");
-  }
-
-  @Override
-  public void sessionPaused() {
-    LOGGER.warn("Debugger paused");
-    this.getBreakpointStates();
-  }
-
   private void getBreakpointStates() {
 
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
 
     BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
-    // String collectedState = breakpointStateCollector.analyzeStackFrame();
-    // displayStateInPanel(collectedState);
-
-    // TODO: how to do step into and step out without generating cascade of in and out (just once)
-    // now we are on the breakpoint line that has the method/Library call
-    // we need to step into it, to get the method information and then step out
-    /*LOGGER.warn("Trying to step into");
-    //To ensure that it runs on the EDT
-    ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
-    LOGGER.warn("After step into");*/
 
     JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (javaStackFrame != null) {
@@ -109,16 +110,71 @@ public class DebugSessionListener implements XDebugSessionListener {
         infoToDisplay.append("File name: ").append(fileName).append("\n");
         infoToDisplay.append("Line: ").append(line).append("\n\n");
       }
+
+      //TODO: debugging settings including return type
+
       infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
+      infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
       infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
       displayStateInPanel(infoToDisplay.toString());
-    }
 
-    /*
-    LOGGER.warn("Trying to step out");
-    ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
-    LOGGER.warn("After to step out");
-    */
+      // TODO: automatically step out and then resume program
+
+      /*if (!stepedOver) {
+        infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
+        displayStateInPanel(infoToDisplay.toString());
+        LOGGER.warn("Trying to step over");
+
+        // Create a CountDownLatch
+        CountDownLatch latch = new CountDownLatch(1);
+
+        // Add a listener for when the stack frame changes
+        debugSession.addSessionListener(new XDebugSessionListener() {
+          @Override
+          public void stackFrameChanged() {
+            LOGGER.warn("Step over completed");
+
+            // Perform your post-stepOver logic here
+            infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
+            infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
+            displayStateInPanel(infoToDisplay.toString());
+
+            // Decrement the latch to unblock waiting thread
+            latch.countDown();
+
+            // Remove the listener to avoid duplicate calls
+            debugSession.removeSessionListener(this);
+            LOGGER.warn("Listener removed");
+          }
+        });
+
+        // Trigger the stepOver in a separate thread to avoid blocking the debugger's event loop
+        ApplicationManager.getApplication().invokeLater(() -> {
+          LOGGER.warn("Invoking stepOver");
+          debugSession.stepOver(true);
+          LOGGER.warn("stepOver invoked");
+        });
+
+        // Block in a background thread to wait for the stepOver to complete
+        ApplicationManager.getApplication().executeOnPooledThread(() -> {
+          try {
+            LOGGER.warn("Waiting for step over to complete...");
+            latch.await(); // Wait until latch.countDown() is called
+            LOGGER.warn("Step over finished, continuing execution.");
+          } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            LOGGER.error("Thread was interrupted while waiting for step over to complete", e);
+          }
+        });
+
+        stepedOver = true;
+      } else {
+        LOGGER.warn("Trying to resume");
+        ApplicationManager.getApplication().invokeLater(debugSession::resume);
+        LOGGER.warn("Resuming");
+        stepedOver = false;
+      }*/
+    }
   }
 
   @NotNull private StackFrameProxyImpl getStackFrameProxy() {
@@ -181,6 +237,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, true))) {
       writer.write(state);
       writer.write("\n====================\n"); // Separate different breakpoints
+      LOGGER.warn("Successfully saved collected state to file");
       return "Successfully saved collected state to file: " + outputFile.getAbsolutePath();
     } catch (IOException e) {
       return "Error saving collected state to file";
