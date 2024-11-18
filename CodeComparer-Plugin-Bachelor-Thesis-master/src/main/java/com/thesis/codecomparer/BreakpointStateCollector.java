@@ -62,24 +62,6 @@ public class BreakpointStateCollector {
       Type returnType = currentMethod.returnType();
       stateInfoBuilder.append("Return Type: ").append(returnType).append("\n").append("\n");
 
-      // I just get the method signature, and not the variable that is getting returned, so name and
-      // value don't make sense here
-      // TODO: get the return value
-      /*if (! returnType.toString().equals("void")) {
-        String returnName = returnType.name();
-        LOGGER.warn("Return Name: " + returnName);
-        sb.append("Return Name: ").append(returnName).append("\n");
-
-        LOGGER.warn("Trying to get value from stackframe ");
-        LocalVariableProxyImpl returnVariable =
-            currentStackFrame.getStackFrameProxy().visibleVariableByName(returnName);
-        LOGGER.warn("Local return variable  " + returnVariable);
-        LOGGER.warn("Getting eturn Value");
-        Value returnValue = stackFrame.getValue(returnVariable);
-        LOGGER.warn("Return Value: " + returnValue);
-        sb.append("Return Value: ").append(returnValue).append("\n");
-      }*/
-
       extractArgumentsInfo(currentStackFrame, currentMethod);
 
       return stateInfoBuilder.toString();
@@ -134,15 +116,11 @@ public class BreakpointStateCollector {
       }
       for (LocalVariable argument : methodArguments) {
 
-        // Type argumentType = argument.type();
-        // stateInfoBuilder.append("Parameter Type: ").append(argumentTYpe).append("\n");
-
         String argumentName = argument.name();
-        // stateInfoBuilder.append("Parameter Name: ").append(argumentName).append("\n");
-
         LocalVariableProxyImpl argumentLocalVariable =
             currentStackFrame.getStackFrameProxy().visibleVariableByName(argumentName);
         Value argumentValue = stackFrame.getValue(argumentLocalVariable);
+
         extractVariableInfo(argumentValue, argument.name(), argument.type(), 3);
       }
     } catch (AbsentInformationException e) {

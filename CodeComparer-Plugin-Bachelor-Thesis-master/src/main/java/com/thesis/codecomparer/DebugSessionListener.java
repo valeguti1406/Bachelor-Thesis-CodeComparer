@@ -20,7 +20,6 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -39,8 +38,8 @@ public class DebugSessionListener implements XDebugSessionListener {
   private final String outputFileName = "collected_states.txt";
   private File outputFile;
 
-  private boolean stepedOver = false;
-
+  private StringBuilder infoToDisplay = new StringBuilder();
+  private boolean isStepping = false; // Track if we are in a step-over operation
 
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
     createOutputFile();
@@ -59,7 +58,24 @@ public class DebugSessionListener implements XDebugSessionListener {
   @Override
   public void sessionPaused() {
     LOGGER.warn("Debugger paused");
-    this.getBreakpointStates();
+    StackFrameProxyImpl stackFrame = getStackFrameProxy();
+    if (stackFrame == null) {
+      LOGGER.warn("No stack frame available!");
+      return;
+    }
+    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
+    JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
+    //empty the StringBuilder
+    infoToDisplay.setLength(0);
+    if (!isStepping) {
+      // First pause: collect method info and initiate stepOver
+      LOGGER.warn("Collecting method info and stepping over");
+      collectAndStepOver(breakpointStateCollector, javaStackFrame);
+    } else {
+      // Step over completed: collect return value and resume
+      LOGGER.warn("Step over completed, collecting return value");
+      collectReturnValueAndResume(breakpointStateCollector, javaStackFrame);
+    }
   }
 
   @Override
@@ -71,7 +87,6 @@ public class DebugSessionListener implements XDebugSessionListener {
   public void sessionStopped() {
     LOGGER.warn("Debugger stopped");
   }
-
 
   private void createOutputFile() {
     String directoryPath = outputDirectoryPath;
@@ -94,90 +109,46 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  private void getBreakpointStates() {
+  private void collectAndStepOver(BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
-    StackFrameProxyImpl stackFrame = getStackFrameProxy();
+    appendFileAndLine();
 
-    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
+    infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
+    infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
+    displayStateInPanel(infoToDisplay.toString());
 
-    JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
-    if (javaStackFrame != null) {
-      StringBuilder infoToDisplay = new StringBuilder();
-      // get fileName and current line and save states in file
-      if (debugSession.getCurrentPosition() != null) {
-        String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
-        int line = debugSession.getCurrentPosition().getLine() + 1;
-        infoToDisplay.append("File name: ").append(fileName).append("\n");
-        infoToDisplay.append("Line: ").append(line).append("\n\n");
-      }
+    LOGGER.warn("Initiating step over...");
+    isStepping = true; // Mark that we are stepping over
 
-      //TODO: debugging settings including return type
+    // Perform step over
+    ApplicationManager.getApplication().invokeLater(() ->{
+            LOGGER.warn("Invoking step over...");
+            debugSession.stepOver(true);
+            LOGGER.warn("Step over invoked");
+    });
+  }
 
-      infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
-      infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
-      infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
-      displayStateInPanel(infoToDisplay.toString());
+  private void collectReturnValueAndResume(BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
-      // TODO: automatically step out and then resume program
+    infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
+    infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
+    displayStateInPanel(infoToDisplay.toString());
 
-      /*if (!stepedOver) {
-        infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
-        displayStateInPanel(infoToDisplay.toString());
-        LOGGER.warn("Trying to step over");
+    LOGGER.warn("Resuming program...");
+    isStepping = false; // Mark that the stepping is complete
+    ApplicationManager.getApplication().invokeLater(debugSession::resume);
+  }
 
-        // Create a CountDownLatch
-        CountDownLatch latch = new CountDownLatch(1);
-
-        // Add a listener for when the stack frame changes
-        debugSession.addSessionListener(new XDebugSessionListener() {
-          @Override
-          public void stackFrameChanged() {
-            LOGGER.warn("Step over completed");
-
-            // Perform your post-stepOver logic here
-            infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
-            infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
-            displayStateInPanel(infoToDisplay.toString());
-
-            // Decrement the latch to unblock waiting thread
-            latch.countDown();
-
-            // Remove the listener to avoid duplicate calls
-            debugSession.removeSessionListener(this);
-            LOGGER.warn("Listener removed");
-          }
-        });
-
-        // Trigger the stepOver in a separate thread to avoid blocking the debugger's event loop
-        ApplicationManager.getApplication().invokeLater(() -> {
-          LOGGER.warn("Invoking stepOver");
-          debugSession.stepOver(true);
-          LOGGER.warn("stepOver invoked");
-        });
-
-        // Block in a background thread to wait for the stepOver to complete
-        ApplicationManager.getApplication().executeOnPooledThread(() -> {
-          try {
-            LOGGER.warn("Waiting for step over to complete...");
-            latch.await(); // Wait until latch.countDown() is called
-            LOGGER.warn("Step over finished, continuing execution.");
-          } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            LOGGER.error("Thread was interrupted while waiting for step over to complete", e);
-          }
-        });
-
-        stepedOver = true;
-      } else {
-        LOGGER.warn("Trying to resume");
-        ApplicationManager.getApplication().invokeLater(debugSession::resume);
-        LOGGER.warn("Resuming");
-        stepedOver = false;
-      }*/
+  private void appendFileAndLine() {
+    if (debugSession.getCurrentPosition() != null) {
+      String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
+      int line = debugSession.getCurrentPosition().getLine() + 1;
+      infoToDisplay.append("File name: ").append(fileName).append("\n");
+      infoToDisplay.append("Line: ").append(line).append("\n\n");
     }
   }
 
-  @NotNull private StackFrameProxyImpl getStackFrameProxy() {
+  private StackFrameProxyImpl getStackFrameProxy() {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (currentStackFrame == null) {
       LOGGER.warn("Current stack frame could not be found!"); // TODO: create error class
