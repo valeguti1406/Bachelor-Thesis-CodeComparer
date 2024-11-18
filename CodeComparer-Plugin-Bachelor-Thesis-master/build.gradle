@@ -19,6 +19,7 @@ dependencies{
     intellijPlatform{
         intellijIdeaUltimate '2024.2'
         bundledPlugin 'com.intellij.java'
+        bundledPlugin 'Git4Idea'
         instrumentationTools()
     }
 

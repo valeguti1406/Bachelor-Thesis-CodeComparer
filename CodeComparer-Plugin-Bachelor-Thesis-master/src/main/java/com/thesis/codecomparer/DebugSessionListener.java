@@ -1,7 +1,10 @@
 package com.thesis.codecomparer;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.intellij.debugger.engine.JavaStackFrame;
 import com.intellij.debugger.jdi.StackFrameProxyImpl;
+import com.intellij.debugger.settings.DebuggerSettings;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.ui.RunnerLayoutUi;
@@ -14,6 +17,7 @@ import com.intellij.util.ui.UIUtil;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
+import com.thesis.codecomparer.dataModels.BreakpointState;
 import com.thesis.codecomparer.ui.CodeComparerIcons;
 import java.awt.*;
 import java.io.BufferedWriter;
@@ -41,6 +45,8 @@ public class DebugSessionListener implements XDebugSessionListener {
   private StringBuilder infoToDisplay = new StringBuilder();
   private boolean isStepping = false; // Track if we are in a step-over operation
 
+  private BreakpointState breakpointState;
+
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
     createOutputFile();
     this.debugSession = debugProcess.getSession();
@@ -51,6 +57,7 @@ public class DebugSessionListener implements XDebugSessionListener {
               @Override
               public void startNotified(@NotNull ProcessEvent event) {
                 DebugSessionListener.this.initUI();
+                activateReturnValueSetting();
               }
             });
   }
@@ -63,13 +70,17 @@ public class DebugSessionListener implements XDebugSessionListener {
       LOGGER.warn("No stack frame available!");
       return;
     }
-    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame, 3);
+
+    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame);
     JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
-    //empty the StringBuilder
+
+    // empty the StringBuilder
     infoToDisplay.setLength(0);
+
     if (!isStepping) {
       // First pause: collect method info and initiate stepOver
       LOGGER.warn("Collecting method info and stepping over");
+      breakpointState = new BreakpointState();
       collectAndStepOver(breakpointStateCollector, javaStackFrame);
     } else {
       // Step over completed: collect return value and resume
@@ -109,42 +120,38 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  private void collectAndStepOver(BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
+  private void collectAndStepOver(
+      BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
-    appendFileAndLine();
-
-    infoToDisplay.append(breakpointStateCollector.getMethodInfo(javaStackFrame)).append("\n\n");
-    infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
-    displayStateInPanel(infoToDisplay.toString());
+    appendFileNameAndLine();
+    breakpointState.setMethodState(breakpointStateCollector.getMethodState(javaStackFrame));
 
     LOGGER.warn("Initiating step over...");
     isStepping = true; // Mark that we are stepping over
 
     // Perform step over
-    ApplicationManager.getApplication().invokeLater(() ->{
-            LOGGER.warn("Invoking step over...");
-            debugSession.stepOver(true);
-            LOGGER.warn("Step over invoked");
-    });
+    ApplicationManager.getApplication().invokeLater(() -> debugSession.stepOver(true));
   }
 
-  private void collectReturnValueAndResume(BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
+  private void collectReturnValueAndResume(
+      BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
-    infoToDisplay.append(breakpointStateCollector.getReturnValue(javaStackFrame)).append("\n\n");
-    infoToDisplay.append(saveStateToFile(infoToDisplay.toString()));
-    displayStateInPanel(infoToDisplay.toString());
+    breakpointState.setReturnValue(breakpointStateCollector.getReturnValue(javaStackFrame));
+
+    // Save the complete BreakpointState to file
+    saveStateToFile(breakpointState);
 
     LOGGER.warn("Resuming program...");
     isStepping = false; // Mark that the stepping is complete
     ApplicationManager.getApplication().invokeLater(debugSession::resume);
   }
 
-  private void appendFileAndLine() {
+  private void appendFileNameAndLine() {
     if (debugSession.getCurrentPosition() != null) {
       String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
       int line = debugSession.getCurrentPosition().getLine() + 1;
-      infoToDisplay.append("File name: ").append(fileName).append("\n");
-      infoToDisplay.append("Line: ").append(line).append("\n\n");
+      breakpointState.setFileName(fileName);
+      breakpointState.setLineNumber(line);
     }
   }
 
@@ -204,14 +211,29 @@ public class DebugSessionListener implements XDebugSessionListener {
     UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
   }
 
-  private String saveStateToFile(String state) {
+  /** Activate the "Show Method Return Values" option in the Debugger Settings */
+  private void activateReturnValueSetting() {
+    // Ensure the setting is enabled when the debugger session starts
+    DebuggerSettings debuggerSettings =
+        ApplicationManager.getApplication().getService(DebuggerSettings.class);
+    if (debuggerSettings != null) {
+      debuggerSettings.WATCH_RETURN_VALUES = true; // Enable the setting
+      LOGGER.warn("Return Values Watch turned on");
+    }
+  }
+
+  private void saveStateToFile(BreakpointState breakpointState) {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, true))) {
-      writer.write(state);
+      Gson gson = new GsonBuilder().setPrettyPrinting().create();
+      String json = gson.toJson(breakpointState);
+
+      writer.write(json);
       writer.write("\n====================\n"); // Separate different breakpoints
       LOGGER.warn("Successfully saved collected state to file");
-      return "Successfully saved collected state to file: " + outputFile.getAbsolutePath();
+      displayStateInPanel(
+          "Successfully saved collected state to file: " + outputFile.getAbsolutePath());
     } catch (IOException e) {
-      return "Error saving collected state to file";
+      displayStateInPanel("Error saving collected state to file");
     }
   }
 }
