@@ -16,8 +16,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class BreakpointStateCollector {
 
-  // StringBuilder used to collect state information for displaying
-  private final StringBuilder stateInfoBuilder;
   private static final Logger LOGGER = Logger.getInstance(BreakpointStateCollector.class);
 
   // Represents the current stack frame to analyze
@@ -25,11 +23,10 @@ public class BreakpointStateCollector {
 
   public BreakpointStateCollector(@NotNull StackFrameProxyImpl stackFrame) {
     this.stackFrame = stackFrame;
-    this.stateInfoBuilder = new StringBuilder();
   }
 
   /*
-   Extract from the Method (Library Call), the inputs and outputs
+   Extract from the Method tha the debugger is currently in, the inputs and outputs
   */
   public MethodState getMethodState(@NotNull JavaStackFrame currentStackFrame) {
     MethodState methodState = new MethodState();
@@ -39,7 +36,7 @@ public class BreakpointStateCollector {
 
       // Set method name and return type
       methodState.setMethodName(currentMethod.name());
-      methodState.setReturnType(currentMethod.returnType().toString());
+      methodState.setReturnType(currentMethod.returnType().name());
 
       // Collect arguments
       List<VariableInfo> argumentInfos = extractArgumentsInfo(currentStackFrame, currentMethod);

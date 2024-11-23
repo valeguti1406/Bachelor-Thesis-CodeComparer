@@ -43,7 +43,9 @@ public class DebugSessionListener implements XDebugSessionListener {
   private File outputFile;
 
   private StringBuilder infoToDisplay = new StringBuilder();
-  private boolean isStepping = false; // Track if we are in a step-over operation
+  private boolean isStepping = false; // General stepping state
+  private boolean isSteppingInto = false; // Track if we are in a step-into operation
+  private boolean isSteppingOut = false; // Track if we are in a step-out operation
 
   private BreakpointState breakpointState;
 
@@ -65,26 +67,25 @@ public class DebugSessionListener implements XDebugSessionListener {
   @Override
   public void sessionPaused() {
     LOGGER.warn("Debugger paused");
-    StackFrameProxyImpl stackFrame = getStackFrameProxy();
-    if (stackFrame == null) {
-      LOGGER.warn("No stack frame available!");
-      return;
-    }
-
-    BreakpointStateCollector breakpointStateCollector = new BreakpointStateCollector(stackFrame);
     JavaStackFrame javaStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
 
+    BreakpointStateCollector breakpointStateCollector = getBreakpointStateCollector();
+    if (breakpointStateCollector == null) return;
     // empty the StringBuilder
     infoToDisplay.setLength(0);
 
     if (!isStepping) {
-      // First pause: collect method info and initiate stepOver
-      LOGGER.warn("Collecting method info and stepping over");
+      // First pause: collect current method and step into the called method
+      LOGGER.warn("Collecting current method info and stepping into called method");
       breakpointState = new BreakpointState();
-      collectAndStepOver(breakpointStateCollector, javaStackFrame);
-    } else {
-      // Step over completed: collect return value and resume
-      LOGGER.warn("Step over completed, collecting return value");
+      collectAndStepInto(breakpointStateCollector, javaStackFrame);
+    } else if (isSteppingInto) {
+      // After step into: collect called method info and step out
+      LOGGER.warn("Step into completed, collecting called method info and stepping out");
+      collectAndStepOut(breakpointStateCollector, javaStackFrame);
+    } else if (isSteppingOut) {
+      // After step out: collect return value and resume
+      LOGGER.warn("Step out completed, collecting return value and resuming");
       collectReturnValueAndResume(breakpointStateCollector, javaStackFrame);
     }
   }
@@ -120,29 +121,52 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  private void collectAndStepOver(
+  private void collectAndStepInto(
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
     appendFileNameAndLine();
-    breakpointState.setMethodState(breakpointStateCollector.getMethodState(javaStackFrame));
 
-    LOGGER.warn("Initiating step over...");
-    isStepping = true; // Mark that we are stepping over
+    // Collect current method details
+    breakpointState.setCurrentMethodState(breakpointStateCollector.getMethodState(javaStackFrame));
 
-    // Perform step over
-    ApplicationManager.getApplication().invokeLater(() -> debugSession.stepOver(true));
+    LOGGER.warn("Initiating step into...");
+    // Mark that stepping into is starting
+    isStepping = true;
+    isSteppingInto = true;
+
+    // Perform the step into
+    ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
+  }
+
+  private void collectAndStepOut(
+          BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
+
+    // Collect details of the called method (after stepping into)
+    breakpointState.setBreakpointMethodCallState(breakpointStateCollector.getMethodState(javaStackFrame));
+
+    LOGGER.warn("Initiating step out...");
+    // Mark that the stepping into is complete and step out is starting
+    isSteppingInto = false;
+    isSteppingOut = true;
+
+    // Perform the step out
+    ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
   }
 
   private void collectReturnValueAndResume(
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
-    breakpointState.setReturnValue(breakpointStateCollector.getReturnValue(javaStackFrame));
+    // Collect the return value after stepping out
+    breakpointState.setBreakpointReturnValue(
+        breakpointStateCollector.getReturnValue(javaStackFrame));
 
     // Save the complete BreakpointState to file
     saveStateToFile(breakpointState);
 
     LOGGER.warn("Resuming program...");
-    isStepping = false; // Mark that the stepping is complete
+    // Mark that the stepping is complete
+    isStepping = false;
+    isSteppingOut = false;
     ApplicationManager.getApplication().invokeLater(debugSession::resume);
   }
 
@@ -151,17 +175,30 @@ public class DebugSessionListener implements XDebugSessionListener {
       String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
       int line = debugSession.getCurrentPosition().getLine() + 1;
       breakpointState.setFileName(fileName);
-      breakpointState.setLineNumber(line);
+      breakpointState.setBreakpointInLine(line);
     }
   }
 
   private StackFrameProxyImpl getStackFrameProxy() {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (currentStackFrame == null) {
-      LOGGER.warn("Current stack frame could not be found!"); // TODO: create error class
+      LOGGER.warn("Current stack frame could not be found!");
+      displayStateInPanel("Current stack frame could not be found!");
+      return null;
     }
+    else {
+      return currentStackFrame.getStackFrameProxy();
+    }
+  }
 
-    return currentStackFrame.getStackFrameProxy();
+  private BreakpointStateCollector getBreakpointStateCollector(){
+    StackFrameProxyImpl stackFrame = getStackFrameProxy();
+    if (stackFrame == null) {
+      LOGGER.warn("No stack frame available!");
+      displayStateInPanel("No stack frame available!");
+      return null;
+    }
+    return new BreakpointStateCollector(stackFrame);
   }
 
   private void displayStateInPanel(String stateInfo) {

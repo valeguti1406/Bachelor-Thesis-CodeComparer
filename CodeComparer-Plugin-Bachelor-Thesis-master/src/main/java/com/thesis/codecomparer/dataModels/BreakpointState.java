@@ -3,9 +3,11 @@ package com.thesis.codecomparer.dataModels;
 public class BreakpointState {
 
   private String fileName; // File where the breakpoint is set
-  private int lineNumber; // Line number of the breakpoint
-  private String returnValue; // Return value of the code executed at this breakpoint
-  private MethodState methodState; // Details about the method being executed at the breakpoint
+  private int breakpointInLine; // Line number of the breakpoint
+  private MethodState currentMethodState; // Details about the method containing the breakpoint
+  private MethodState
+      breakpointMethodCallState; // Details about the method called by the breakpoint
+  private String breakpointReturnValue; // Return value of the code executed at this breakpoint
 
   public String getFileName() {
     return fileName;
@@ -15,27 +17,35 @@ public class BreakpointState {
     this.fileName = fileName;
   }
 
-  public int getLineNumber() {
-    return lineNumber;
+  public int getBreakpointInLine() {
+    return breakpointInLine;
   }
 
-  public void setLineNumber(int lineNumber) {
-    this.lineNumber = lineNumber;
+  public void setBreakpointInLine(int breakpointInLine) {
+    this.breakpointInLine = breakpointInLine;
   }
 
-  public String getReturnValue() {
-    return returnValue;
+  public MethodState getCurrentMethodState() {
+    return currentMethodState;
   }
 
-  public void setReturnValue(String returnValue) {
-    this.returnValue = returnValue;
+  public void setCurrentMethodState(MethodState currentMethodState) {
+    this.currentMethodState = currentMethodState;
   }
 
-  public MethodState getMethodState() {
-    return methodState;
+  public String getBreakpointReturnValue() {
+    return breakpointReturnValue;
   }
 
-  public void setMethodState(MethodState methodState) {
-    this.methodState = methodState;
+  public void setBreakpointReturnValue(String breakpointReturnValue) {
+    this.breakpointReturnValue = breakpointReturnValue;
+  }
+
+  public MethodState getBreakpointMethodCallState() {
+    return breakpointMethodCallState;
+  }
+
+  public void setBreakpointMethodCallState(MethodState breakpointMethodCallState) {
+    this.breakpointMethodCallState = breakpointMethodCallState;
   }
 }
