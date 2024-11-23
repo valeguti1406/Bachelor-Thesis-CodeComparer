@@ -39,7 +39,7 @@ public class DebugSessionListener implements XDebugSessionListener {
   private final XDebugSession debugSession;
 
   private final String outputDirectoryPath = "CodeComparer-Plugin/output";
-  private final String outputFileName = "collected_states.txt";
+  private final String outputFileName = "collected_states2.txt";
   private File outputFile;
 
   private StringBuilder infoToDisplay = new StringBuilder();
@@ -219,8 +219,7 @@ public class DebugSessionListener implements XDebugSessionListener {
   }
 
   /**
-   * Add "Start CodeComparer" tab to the debugging window When the tab is clicked
-   * StartCodeComparer.actionPerformed is called
+   * Add "Start CodeComparer" tab to the debugging window
    */
   private void initUI() {
     if (this.userInterface != null) {
