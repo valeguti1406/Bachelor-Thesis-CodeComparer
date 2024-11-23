@@ -1,5 +1,10 @@
 package com.thesis.codecomparer.dataModels;
 
+/**
+ * Represents a variable and its value during debugging.
+ * This class encapsulates the variable's name and its JSON representation,
+ * which provides a serialized view of the variable's value.
+ */
 public class VariableInfo {
   private String name; // Variable name
   private String jsonRepresentation; // JSON representation of the variable value

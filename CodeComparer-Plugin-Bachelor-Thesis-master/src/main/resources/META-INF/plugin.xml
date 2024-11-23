@@ -41,7 +41,7 @@
 
     <actions>
         <group id="CodeComparer.VisualizerToolbar" popup="false">
-            <action id="StartFileComparer" class="com.thesis.codecomparer.StartFileComparer"
+            <action id="StartFileComparer" class="com.thesis.codecomparer.ui.StartFileComparer"
                     text="Generate a Report: Compare 2 CodeComparer Files">
             </action>
         </group>

@@ -8,8 +8,6 @@ import com.intellij.debugger.settings.DebuggerSettings;
 import com.intellij.execution.process.ProcessEvent;
 import com.intellij.execution.process.ProcessListener;
 import com.intellij.execution.ui.RunnerLayoutUi;
-import com.intellij.openapi.actionSystem.ActionManager;
-import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.ui.SimpleToolWindowPanel;
@@ -25,6 +23,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import javax.swing.*;
+
+import com.thesis.codecomparer.ui.DebuggerCodeComparerUI;
 import org.jetbrains.annotations.NotNull;
 
 public class DebugSessionListener implements XDebugSessionListener {
@@ -34,7 +34,7 @@ public class DebugSessionListener implements XDebugSessionListener {
   private static final String TOOLBAR_ACTION =
       "CodeComparer.VisualizerToolbar"; // group id defined in plugin.xml
 
-  private JPanel userInterface;
+  private final DebuggerCodeComparerUI codeComparerUI;
 
   private final XDebugSession debugSession;
 
@@ -52,6 +52,8 @@ public class DebugSessionListener implements XDebugSessionListener {
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
     createOutputFile();
     this.debugSession = debugProcess.getSession();
+    this.codeComparerUI = DebuggerCodeComparerUI.getInstance();
+
     debugProcess
         .getProcessHandler()
         .addProcessListener(
@@ -62,6 +64,23 @@ public class DebugSessionListener implements XDebugSessionListener {
                 activateReturnValueSetting();
               }
             });
+  }
+
+  /**
+   * Add "Start CodeComparer" tab to the debugging window.
+   * Delegates the UI creation to the DebuggerCodeComparerUI class.
+   */
+  private void initUI() {
+    final var uiContainer = new SimpleToolWindowPanel(false, true);
+    // Use the DebuggerCodeComparerUI's main panel
+    uiContainer.setContent(codeComparerUI.getMainPanel());
+
+    final RunnerLayoutUi ui = this.debugSession.getUI();
+    final var content = ui.createContent(
+            CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
+    content.setCloseable(false);
+
+    UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
   }
 
   @Override
@@ -103,18 +122,17 @@ public class DebugSessionListener implements XDebugSessionListener {
   private void createOutputFile() {
     String directoryPath = outputDirectoryPath;
     File outputDir = new File(directoryPath);
-    if (!outputDir.exists()) {
-      boolean dirCreated = outputDir.mkdirs(); // Create the directory if it doesn't exist
-      LOGGER.warn("Created directory? " + dirCreated);
-    }
+
+    // Create the directory if it doesn't exist
+    if (!outputDir.exists()) { outputDir.mkdirs();}
 
     String filePath = directoryPath + "/" + outputFileName;
     outputFile = new File(filePath);
 
-    // Empty the file if it exists
+    // Clear the file content and add the separator
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, false))) {
-      // Empty the file by writing nothing
-      writer.write("");
+      writer.write(""); // Empty the file by writing nothing
+      writer.write("====================\n"); // Add the initial separator
       LOGGER.warn("Emptied the collected states file: " + outputFile.getAbsolutePath());
     } catch (IOException e) {
       LOGGER.error("Error emptying the collected state file", e);
@@ -183,7 +201,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (currentStackFrame == null) {
       LOGGER.warn("Current stack frame could not be found!");
-      displayStateInPanel("Current stack frame could not be found!");
+      codeComparerUI.updateErrorDisplay("Current stack frame could not be found!");
       return null;
     }
     else {
@@ -195,57 +213,12 @@ public class DebugSessionListener implements XDebugSessionListener {
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
     if (stackFrame == null) {
       LOGGER.warn("No stack frame available!");
-      displayStateInPanel("No stack frame available!");
+      codeComparerUI.updateErrorDisplay("No stack frame available!");
       return null;
     }
     return new BreakpointStateCollector(stackFrame);
   }
 
-  private void displayStateInPanel(String stateInfo) {
-    // Clear the current UI content
-    userInterface.removeAll();
-
-    // Create a text area to display the state information
-    JTextArea stateTextArea = new JTextArea(stateInfo);
-    stateTextArea.setEditable(false); // Read-only display
-    JScrollPane scrollPane = new JScrollPane(stateTextArea);
-
-    // Add the scroll pane to the main panel
-    userInterface.add(scrollPane, BorderLayout.CENTER);
-
-    // Refresh the UI to ensure changes are visible
-    userInterface.revalidate();
-    userInterface.repaint();
-  }
-
-  /**
-   * Add "Start CodeComparer" tab to the debugging window
-   */
-  private void initUI() {
-    if (this.userInterface != null) {
-      return;
-    }
-    this.userInterface = new JPanel();
-    userInterface.setLayout(new BorderLayout());
-    final var uiContainer = new SimpleToolWindowPanel(false, true);
-
-    // create tab and connect it to StartCodeComparer
-    final var actionManager = ActionManager.getInstance();
-    final var actionToolbar =
-        actionManager.createActionToolbar(
-            TOOLBAR_ACTION, (DefaultActionGroup) actionManager.getAction(TOOLBAR_ACTION), false);
-    actionToolbar.setTargetComponent(this.userInterface);
-    uiContainer.setToolbar(actionToolbar.getComponent());
-    uiContainer.setContent(this.userInterface);
-
-    // add tab to the debugging ui
-    final RunnerLayoutUi ui = this.debugSession.getUI();
-    final var content =
-        ui.createContent(
-            CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
-    content.setCloseable(false);
-    UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
-  }
 
   /** Activate the "Show Method Return Values" option in the Debugger Settings */
   private void activateReturnValueSetting() {
@@ -266,10 +239,9 @@ public class DebugSessionListener implements XDebugSessionListener {
       writer.write(json);
       writer.write("\n====================\n"); // Separate different breakpoints
       LOGGER.warn("Successfully saved collected state to file");
-      displayStateInPanel(
-          "Successfully saved collected state to file: " + outputFile.getAbsolutePath());
+      codeComparerUI.updateFilePathDisplay(outputFile.getAbsolutePath());
     } catch (IOException e) {
-      displayStateInPanel("Error saving collected state to file");
+      codeComparerUI.updateErrorDisplay("Error saving collected state to file");
     }
   }
 }
