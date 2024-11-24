@@ -21,13 +21,13 @@ import org.jetbrains.annotations.NotNull;
  */
 public class ValueJsonSerializer {
 
-  //Constant representing the qualified name of the `java.lang.Object` class.
+  // Constant representing the qualified name of the `java.lang.Object` class.
   public static final String JAVA_LANG_OBJECT = "java.lang.Object";
 
-  //The maximum allowed time (in milliseconds) for the JSON serialization process. Default value: 7 seconds.
+  // The maximum allowed time (in milliseconds) for the JSON serialization process. Default value: 7 seconds.
   private static long timeLimit = 7000;
 
-  //A timestamp indicating when the serialization process started.
+  // A timestamp indicating when the serialization process started.
   private static long timeStamp;
 
   /**

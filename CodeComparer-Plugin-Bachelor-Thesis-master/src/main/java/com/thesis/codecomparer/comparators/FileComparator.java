@@ -49,40 +49,141 @@ public class FileComparator {
      *
      * @param file1States A list of BreakpointState objects from the first file.
      * @param file2States A list of BreakpointState objects from the second file.
+     * @param file1Name   Name of the first file being compared.
+     * @param file2Name   Name of the second file being compared.
      * @return A formatted string report detailing differences between the two lists.
      */
-    public static String generateGroupedReport(List<BreakpointState> file1States, List<BreakpointState> file2States) {
-        StringBuilder report = new StringBuilder("Differences found:\n\n");
+    public static String generateGroupedReport(List<BreakpointState> file1States, List<BreakpointState> file2States, String file1Name, String file2Name) {
+        StringBuilder report = new StringBuilder();
 
-        int maxBlocks = Math.max(file1States.size(), file2States.size()); // Determine the larger list
-        for (int i = 0; i < maxBlocks; i++) {
-            report.append("Breakpoint ").append(i + 1).append(":\n"); // Add a name for this Breakpoint to the report 
+        // Add header for file comparison
+        addComparisonHeader(report, file1Name, file2Name);
 
-            // If file 2 has extra Breakpoints
-            if (i >= file1States.size()) {
-                report.append("  - Extra Breakpoint in File 2:\n    ").append(file2States.get(i)).append("\n");
-            }
-            // If file 1 has extra Breakpoints
-            else if (i >= file2States.size()) {
-                report.append("  - Extra Breakpoint in File 1:\n    ").append(file1States.get(i)).append("\n");
-            }
-            // Compare corresponding Breakpoint from both files
-            else {
-                List<String> differences = StateComparator.compareBreakpointStates(file1States.get(i), file2States.get(i), "");
-                if (differences.isEmpty()) {
-                    report.append("  - No differences\n"); // No differences in this Breakpoint
-                } else {
-                    // Add all differences for this block
-                    for (String diff : differences) {
-                        report.append("  - ").append(diff).append("\n");
-                    }
-                }
-            }
+        // Initialize summary trackers
+        List<String> breakpointsWithDiffs = new ArrayList<>();
+        List<String> breakpointsWithoutDiffs = new ArrayList<>();
+        int breakpointsWithDifferences = 0;
+        int breakpointsWithoutDifferences = 0;
 
-            report.append("\n"); // Add spacing between Breakpoint
+        int totalBreakpoints = Math.max(file1States.size(), file2States.size());
+
+        for (int i = 0; i < totalBreakpoints; i++) {
+            String location = getBreakpointLocation(i, file1States, file2States);
+
+            // Collect differences for the current breakpoint
+            List<String> differences = getBreakpointDifferences(i, file1States, file2States);
+
+            if (differences.isEmpty()) {
+                // No differences for this breakpoint
+                breakpointsWithoutDiffs.add("Breakpoint " + (i + 1) + location);
+                breakpointsWithoutDifferences++;
+            } else {
+                // Append differences to the report
+                appendBreakpointWithDifferences(report, i, location, differences);
+                breakpointsWithDiffs.add("Breakpoint " + (i + 1) + location);
+                breakpointsWithDifferences++;
+            }
         }
 
-        return report.toString(); // Return the final report
+        // Add summary section
+        appendSummary(report, totalBreakpoints, breakpointsWithDifferences, breakpointsWithoutDifferences, breakpointsWithDiffs, breakpointsWithoutDiffs);
+
+        return report.toString();
     }
 
+    /**
+     * Adds a header section for file comparison to the report.
+     *
+     * @param report     The StringBuilder to append the header to.
+     * @param file1Name  Name of the first file being compared.
+     * @param file2Name  Name of the second file being compared.
+     */
+    private static void addComparisonHeader(StringBuilder report, String file1Name, String file2Name) {
+        report.append("=== Comparing Files ===\n");
+        report.append("- File 1: ").append(file1Name).append("\n");
+        report.append("- File 2: ").append(file2Name).append("\n\n");
+        report.append("=== Differences Found ===\n\n");
+    }
+
+    /**
+     * Retrieves the file name and line number information for a breakpoint.
+     *
+     * @param index         The index of the breakpoint.
+     * @param file1States   List of breakpoints from the first file.
+     * @param file2States   List of breakpoints from the second file.
+     * @return A string describing the breakpoint's file and line number.
+     */
+    private static String getBreakpointLocation(int index, List<BreakpointState> file1States, List<BreakpointState> file2States) {
+        if (index < file1States.size()) {
+            BreakpointState state1 = file1States.get(index);
+            return " (File: " + state1.getFileName() + ", Line: " + state1.getBreakpointInLine() + ")";
+        } else if (index < file2States.size()) {
+            BreakpointState state2 = file2States.get(index);
+            return " (File: " + state2.getFileName() + ", Line: " + state2.getBreakpointInLine() + ")";
+        }
+        return "";
+    }
+
+    /**
+     * Compares the breakpoints at the specified index and identifies differences.
+     *
+     * @param index         The index of the breakpoint.
+     * @param file1States   List of breakpoints from the first file.
+     * @param file2States   List of breakpoints from the second file.
+     * @return A list of strings describing differences, or an empty list if no differences exist.
+     */
+    private static List<String> getBreakpointDifferences(int index, List<BreakpointState> file1States, List<BreakpointState> file2States) {
+        if (index < file1States.size() && index < file2States.size()) {
+            return StateComparator.compareBreakpointStates(file1States.get(index), file2States.get(index));
+        }
+        return new ArrayList<>();
+    }
+
+    /**
+     * Appends details of a breakpoint with differences to the report.
+     *
+     * @param report      The StringBuilder to append to.
+     * @param index       The index of the breakpoint.
+     * @param location    The file and line number location of the breakpoint.
+     * @param differences A list of strings describing the differences.
+     */
+    private static void appendBreakpointWithDifferences(StringBuilder report, int index, String location, List<String> differences) {
+        report.append("=== Breakpoint ").append(index + 1).append(location).append(" ===\n");
+        for (String diff : differences) {
+            if (diff.startsWith("  Current Method ->")) {
+                report.append("  Current Method:\n");
+            } else if (diff.startsWith("  Invoked Method ->")) {
+                report.append("  Invoked Method:\n");
+            } else if (diff.startsWith("  - ")) {
+                report.append("    ").append(diff.replace("  - ", "- ")).append("\n");
+            } else {
+                report.append("    ").append(diff).append("\n");
+            }
+        }
+        report.append("\n");
+    }
+
+    /**
+     * Appends a summary of the comparison results to the report.
+     *
+     * @param report                      The StringBuilder to append the summary to.
+     * @param totalBreakpoints            The total number of breakpoints compared.
+     * @param breakpointsWithDifferences  The number of breakpoints with differences.
+     * @param breakpointsWithoutDifferences The number of breakpoints without differences.
+     * @param breakpointsWithDiffs        A list of breakpoints with differences.
+     * @param breakpointsWithoutDiffs     A list of breakpoints without differences.
+     */
+    private static void appendSummary(StringBuilder report, int totalBreakpoints, int breakpointsWithDifferences, int breakpointsWithoutDifferences, List<String> breakpointsWithDiffs, List<String> breakpointsWithoutDiffs) {
+        report.append("=== Summary ===\n");
+        report.append("- Total Breakpoints: ").append(totalBreakpoints).append("\n\n");
+        report.append("- Breakpoints with Differences: ").append(breakpointsWithDifferences).append("\n");
+        for (String bp : breakpointsWithDiffs) {
+            report.append("  ").append(bp).append("\n");
+        }
+        report.append("\n");
+        report.append("- Breakpoints without Differences: ").append(breakpointsWithoutDifferences).append("\n");
+        for (String bp : breakpointsWithoutDiffs) {
+            report.append("  ").append(bp).append("\n");
+        }
+    }
 }

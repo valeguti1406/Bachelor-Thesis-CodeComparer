@@ -37,15 +37,13 @@ public class DebugSessionListener implements XDebugSessionListener {
 
   private static final Logger LOGGER = Logger.getInstance(DebugSessionListener.class);
   private static final String CONTENT_ID = "com.thesis.CodeComparer";  // Identifier for the debugging tab content
-  private static final String TOOLBAR_ACTION =
-      "CodeComparer.VisualizerToolbar"; // Toolbar action ID (defined in plugin.xml)
 
   private final CodeComparerUI codeComparerUI;  // UI manager for the CodeComparer tab
 
   private final XDebugSession debugSession; // Current debugger session
 
   private final String outputDirectoryPath = "CodeComparer-Plugin/output"; // Directory for saving JSON output
-  private final String outputFileName = "collected_states.txt"; // Output file name
+  private final String outputFileName = "collected_states2.txt"; // Output file name
   private File outputFile; // Reference to the output file
 
   private boolean isStepping = false; // General stepping state

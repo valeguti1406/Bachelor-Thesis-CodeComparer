@@ -218,18 +218,24 @@ public class CodeComparerUI {
      * Handles the file selection process, performs the comparison, and displays the results.
      */
     public void showFileSelectionDialog() {
-        String file1 = selectFile("Select First File to Compare");
-        if (file1 == null) return;
+        String file1Path = selectFile("Select First File to Compare");
+        if (file1Path == null) return;
 
-        String file2 = selectFile("Select Second File to Compare");
-        if (file2 == null) return;
+        String file2Path = selectFile("Select Second File to Compare");
+        if (file2Path == null) return;
 
         String result;
         try {
             // Parse and compare the files
-            List<BreakpointState> file1States = FileComparator.parseFile(file1);
-            List<BreakpointState> file2States = FileComparator.parseFile(file2);
-            result = FileComparator.generateGroupedReport(file1States, file2States);
+            List<BreakpointState> file1States = FileComparator.parseFile(file1Path);
+            List<BreakpointState> file2States = FileComparator.parseFile(file2Path);
+
+            // Extract file names from file paths
+            String file1Name = new File(file1Path).getName();
+            String file2Name = new File(file2Path).getName();
+
+            // Generate the report
+            result = FileComparator.generateGroupedReport(file1States, file2States,file1Name,file2Name);
         } catch (IOException e) {
             result = "Error while parsing file: " + e.getMessage();
         }
