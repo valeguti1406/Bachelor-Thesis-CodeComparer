@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.Comparators;
+package com.thesis.codecomparer.comparators;
 
 import com.google.gson.Gson;
 import com.thesis.codecomparer.dataModels.BreakpointState;

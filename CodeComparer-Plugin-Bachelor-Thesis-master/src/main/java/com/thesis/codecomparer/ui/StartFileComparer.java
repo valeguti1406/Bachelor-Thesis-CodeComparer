@@ -28,7 +28,7 @@ public class StartFileComparer extends AnAction {
   @Override
   public void actionPerformed(@NotNull AnActionEvent event) {
     // Delegate file selection and report generation to the DebuggerCodeComparerUI
-    DebuggerCodeComparerUI ui = DebuggerCodeComparerUI.getInstance();
+    CodeComparerUI ui = CodeComparerUI.getInstance();
     ui.showFileSelectionDialog();
   }
 

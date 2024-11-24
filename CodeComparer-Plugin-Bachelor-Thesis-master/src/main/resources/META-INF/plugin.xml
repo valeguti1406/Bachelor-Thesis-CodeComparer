@@ -35,7 +35,7 @@
     </extensions>
 
     <projectListeners>
-        <listener class="com.thesis.codecomparer.DebuggerManagerListener"
+        <listener class="com.thesis.codecomparer.codeComparerDebugger.DebuggerManagerListener"
                   topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
     </projectListeners>
 

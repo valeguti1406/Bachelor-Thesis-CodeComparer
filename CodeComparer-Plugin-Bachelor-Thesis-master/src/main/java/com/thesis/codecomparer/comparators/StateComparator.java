@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.Comparators;
+package com.thesis.codecomparer.comparators;
 
 import com.thesis.codecomparer.dataModels.BreakpointState;
 import com.thesis.codecomparer.dataModels.MethodState;

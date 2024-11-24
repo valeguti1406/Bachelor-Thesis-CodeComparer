@@ -3,7 +3,7 @@ package com.thesis.codecomparer.ui;
 import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.util.ui.JBUI;
-import com.thesis.codecomparer.Comparators.FileComparator;
+import com.thesis.codecomparer.comparators.FileComparator;
 import com.thesis.codecomparer.dataModels.BreakpointState;
 
 import javax.swing.*;
@@ -24,8 +24,8 @@ import java.util.List;
  * 2. Parses the selected files and compares their contents using FileComparator.
  * 3. Displays the results in a scrollable text area within the tab.
  */
-public class DebuggerCodeComparerUI {
-    private static DebuggerCodeComparerUI instance; // Singleton instance of the UI
+public class CodeComparerUI {
+    private static CodeComparerUI instance; // Singleton instance of the UI
     private final JPanel mainPanel; // Main container for the debugging tab
     private JLabel errorLabel; // Label to display errors
 
@@ -37,7 +37,7 @@ public class DebuggerCodeComparerUI {
      * Private constructor to initialize the UI components.
      * Use the getInstance() method to access the singleton instance.
      */
-    private DebuggerCodeComparerUI() {
+    private CodeComparerUI() {
         mainPanel = new JPanel(new GridBagLayout()); // Use GridBagLayout for flexible sizing
         reportArea = createReportArea();
 
@@ -173,9 +173,9 @@ public class DebuggerCodeComparerUI {
      * This prevents accidental creation of multiple UI instances
      * @return The single DebuggerCodeComparerUI instance.
      */
-    public static DebuggerCodeComparerUI getInstance() {
+    public static CodeComparerUI getInstance() {
         if (instance == null) {
-            instance = new DebuggerCodeComparerUI();
+            instance = new CodeComparerUI();
         }
         return instance;
     }
