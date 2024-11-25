@@ -1,10 +1,9 @@
 package com.thesis.codecomparer.dataModels;
 
 /**
- * Represents the state of a breakpoint during debugging.
- * This class encapsulates information about the file, line number,
- * the current method containing the breakpoint, the method called by the breakpoint,
- * and the return value at the breakpoint.
+ * Represents the state of a breakpoint during debugging. This class encapsulates information about
+ * the file, line number, the current method containing the breakpoint, the method called by the
+ * breakpoint, and the return value at the breakpoint.
  */
 public class BreakpointState {
 

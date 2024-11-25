@@ -8,21 +8,20 @@ import com.intellij.debugger.jdi.StackFrameProxyImpl;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.sun.jdi.*;
-import com.thesis.codecomparer.ui.CodeComparerUI;
-import com.thesis.codecomparer.variableExtractor.ValueJsonSerializer;
 import com.thesis.codecomparer.dataModels.MethodState;
 import com.thesis.codecomparer.dataModels.VariableInfo;
+import com.thesis.codecomparer.ui.CodeComparerUI;
+import com.thesis.codecomparer.variableExtractor.ValueJsonSerializer;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Collects state information about the current method being executed in a debugger session.
- * This includes:
- * - Method name, return type, and arguments (inputs).
- * - Return value of the last executed method.
- * - Serialized representations of arguments and return values in JSON.
+ * Collects state information about the current method being executed in a debugger session. This
+ * includes: - Method name, return type, and arguments (inputs). - Return value of the last executed
+ * method. - Serialized representations of arguments and return values in JSON.
  *
- * The class relies on the IntelliJ Debugger API to extract runtime information from the current stack frame.
+ * <p>The class relies on the IntelliJ Debugger API to extract runtime information from the current
+ * stack frame.
  */
 public class BreakpointStateCollector {
 
@@ -42,9 +41,8 @@ public class BreakpointStateCollector {
   }
 
   /**
-   * Extracts information about the current method being executed, including:
-   * - Method name and return type.
-   * - Argument names and serialized JSON representations of their values.
+   * Extracts information about the current method being executed, including: - Method name and
+   * return type. - Argument names and serialized JSON representations of their values.
    *
    * @param currentStackFrame The current stack frame in the debugger session.
    * @return A MethodState object containing method details and argument information.
@@ -69,7 +67,8 @@ public class BreakpointStateCollector {
       codeComparerUI.updateErrorDisplay("Current method could not be found!");
       throw new RuntimeException(e);
     } catch (ClassNotLoadedException e) {
-      codeComparerUI.updateErrorDisplay("Getting the return type of the current method was not possible");
+      codeComparerUI.updateErrorDisplay(
+          "Getting the return type of the current method was not possible");
       throw new RuntimeException(e);
     }
   }
@@ -93,15 +92,15 @@ public class BreakpointStateCollector {
         return extractVariableJson(currentStackFrame, returnValue);
       }
     } catch (Exception e) {
-      codeComparerUI.updateErrorDisplay("Error collecting return value");
-      throw new RuntimeException(e);
+      codeComparerUI.updateErrorDisplay("Error collecting return value" + e.getMessage());
+      return "Error collecting return value";
     }
     return "There is no return value for the last executed method";
   }
 
   /**
-   * Accesses the debug process associated with the current stack frame.
-   * Uses reflection to access a private field in the JavaStackFrame class.
+   * Accesses the debug process associated with the current stack frame. Uses reflection to access a
+   * private field in the JavaStackFrame class.
    *
    * @param javaStackFrame The current stack frame.
    * @return The DebugProcessImpl associated with the stack frame.

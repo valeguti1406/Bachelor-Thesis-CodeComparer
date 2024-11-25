@@ -11,20 +11,20 @@ import org.jetbrains.annotations.NotNull;
 /**
  * Utility class for serializing `Value` objects from the Java Debug Interface (JDI) to JSON format.
  *
- * This class provides methods to:
- * - Serialize primitives, strings, arrays, and objects to JSON.
- * - Handle nested objects and prevent infinite loops caused by circular references.
- * - Customize serialization behavior for common Java types like maps and collections.
+ * <p>This class provides methods to: - Serialize primitives, strings, arrays, and objects to JSON.
+ * - Handle nested objects and prevent infinite loops caused by circular references. - Customize
+ * serialization behavior for common Java types like maps and collections.
  *
- * Designed for use in debugging scenarios, where `Value` objects are obtained during a
- * debugging session and need to be converted into a JSON-compatible format for analysis or output.
+ * <p>Designed for use in debugging scenarios, where `Value` objects are obtained during a debugging
+ * session and need to be converted into a JSON-compatible format for analysis or output.
  */
 public class ValueJsonSerializer {
 
   // Constant representing the qualified name of the `java.lang.Object` class.
   public static final String JAVA_LANG_OBJECT = "java.lang.Object";
 
-  // The maximum allowed time (in milliseconds) for the JSON serialization process. Default value: 7 seconds.
+  // The maximum allowed time (in milliseconds) for the JSON serialization process. Default value: 7
+  // seconds.
   private static long timeLimit = 7000;
 
   // A timestamp indicating when the serialization process started.
@@ -49,12 +49,13 @@ public class ValueJsonSerializer {
   /**
    * Serializes a given JDI value to its JSON representation.
    *
-   * This method determines the type of the value (primitive, string, array, object, etc.)
-   * and delegates the appropriate logic for each type.
+   * <p>This method determines the type of the value (primitive, string, array, object, etc.) and
+   * delegates the appropriate logic for each type.
    *
    * @param value the JDI value to serialize.
    * @param thread the current thread being used for method evaluation and serialization.
-   * @param refPath a set containing the unique IDs of previously visited object references (for circular reference detection).
+   * @param refPath a set containing the unique IDs of previously visited object references (for
+   *     circular reference detection).
    * @return the JSON string representation of the value.
    */
   private static String toJsonInner(Value value, ThreadReference thread, Set<Long> refPath) {
@@ -87,7 +88,7 @@ public class ValueJsonSerializer {
       // Handle simple objects like Integer, Boolean, etc.
       if (isSimpleObject(allInheritedTypes)) {
         return toJsonInner(
-                objectValue.getValue(((ClassType) value.type()).fieldByName("value")), thread, refPath);
+            objectValue.getValue(((ClassType) value.type()).fieldByName("value")), thread, refPath);
       }
 
       // Handle maps
@@ -113,23 +114,23 @@ public class ValueJsonSerializer {
   }
 
   /**
-   * Checks if the time spent on the serialization process has exceeded the allowed limit.
-   * If the time limit is exceeded, throws a JsonSerializeException.
+   * Checks if the time spent on the serialization process has exceeded the allowed limit. If the
+   * time limit is exceeded, throws a JsonSerializeException.
    *
-   * This prevents the serialization of excessively large or complex objects.
+   * <p>This prevents the serialization of excessively large or complex objects.
    */
   private static void checkTimeLimit() {
     if (System.currentTimeMillis() - timeStamp > timeLimit) {
       throw new JsonSerializeException(
-              "JSON serializing timed out, probably the object is too big to JSON.");
+          "JSON serializing timed out, probably the object is too big to JSON.");
     }
   }
 
   /**
    * Detects circular references in the object graph to prevent infinite recursion.
    *
-   * If a circular reference is detected, this method ensures that it is not
-   * serialized again by returning `true`.
+   * <p>If a circular reference is detected, this method ensures that it is not serialized again by
+   * returning `true`.
    *
    * @param value the JDI value to check for circular references.
    * @param refPath a set containing the unique IDs of previously visited object references.
@@ -149,11 +150,12 @@ public class ValueJsonSerializer {
   /**
    * Serializes primitive and string values to their JSON representation.
    *
-   * Handles the basic Java types such as integers, doubles, floats, booleans, and strings.
-   * Also escapes characters in strings to ensure valid JSON formatting.
+   * <p>Handles the basic Java types such as integers, doubles, floats, booleans, and strings. Also
+   * escapes characters in strings to ensure valid JSON formatting.
    *
    * @param value the JDI value to serialize.
-   * @return the JSON string representation of the value, or null if the value is not a primitive or string.
+   * @return the JSON string representation of the value, or null if the value is not a primitive or
+   *     string.
    */
   private static String handlePrimitiveAndStringValues(Value value) {
     if (value instanceof IntegerValue) return String.valueOf(((IntegerValue) value).value());
@@ -173,11 +175,12 @@ public class ValueJsonSerializer {
   /**
    * Serializes arrays to their JSON representation.
    *
-   * Recursively serializes each element of the array and combines them into a JSON array format.
+   * <p>Recursively serializes each element of the array and combines them into a JSON array format.
    *
    * @param value the JDI value representing an array to serialize.
    * @param thread the current thread being used for method evaluation and serialization.
-   * @param refPath a set containing the unique IDs of previously visited object references (for circular reference detection).
+   * @param refPath a set containing the unique IDs of previously visited object references (for
+   *     circular reference detection).
    * @return the JSON string representation of the array.
    */
   private static String handleArrayValues(Value value, ThreadReference thread, Set<Long> refPath) {
@@ -198,21 +201,23 @@ public class ValueJsonSerializer {
   /**
    * Serializes a `java.util.Map` object to its JSON representation.
    *
-   * This method iterates through the map's key-value pairs, serializing each key and value to JSON.
-   * Keys are checked for their type, with simple types directly converted and complex types
+   * <p>This method iterates through the map's key-value pairs, serializing each key and value to
+   * JSON. Keys are checked for their type, with simple types directly converted and complex types
    * serialized using their string representation. Values are recursively serialized.
    *
    * @param objectValue the `ObjectReference` representing the map instance.
    * @param thread the current thread used for method invocation and serialization.
-   * @param refPath a set containing the unique IDs of previously visited object references
-   *                to prevent circular references.
+   * @param refPath a set containing the unique IDs of previously visited object references to
+   *     prevent circular references.
    * @return the JSON string representation of the map.
    */
-  private static String handleMap(ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
+  private static String handleMap(
+      ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
     // Obtain the keySet of the map by invoking the "keySet" method
     ObjectReference keySet = (ObjectReference) invokeMethod(objectValue, "keySet", thread);
     if (keySet == null) {
-      throw new JsonSerializeException("KeySet of Map returns null: " + toValRefString(objectValue));
+      throw new JsonSerializeException(
+          "KeySet of Map returns null: " + toValRefString(objectValue));
     }
 
     // Convert the keySet into an array for iteration
@@ -231,7 +236,10 @@ public class ValueJsonSerializer {
       String keyStr;
       if (isSimpleValue(key)) {
         String simpleValStr = toJsonInner(key, thread, refPath);
-        keyStr = (simpleValStr != null && simpleValStr.startsWith("\"")) ? simpleValStr : "\"" + simpleValStr + "\"";
+        keyStr =
+            (simpleValStr != null && simpleValStr.startsWith("\""))
+                ? simpleValStr
+                : "\"" + simpleValStr + "\"";
       } else {
         keyStr = "\"" + toValRefString((ObjectReference) key) + "\"";
       }
@@ -248,53 +256,53 @@ public class ValueJsonSerializer {
     return str.toString();
   }
 
-
   /**
    * Serializes a `java.util.Collection` object to its JSON representation.
    *
-   * Converts the collection to an array using `toArray` and serializes it as a JSON array.
+   * <p>Converts the collection to an array using `toArray` and serializes it as a JSON array.
    *
    * @param objectValue the `ObjectReference` representing the collection.
    * @param thread the current thread being used for method evaluation and serialization.
    * @param refPath a set containing the unique IDs of previously visited object references.
    * @return the JSON string representation of the collection.
    */
-  private static String handleCollection(ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
+  private static String handleCollection(
+      ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
     return toJsonInner(invokeMethod(objectValue, "toArray", thread), thread, refPath);
   }
 
   /**
    * Serializes a Java object using its `toString` method if overridden.
    *
-   * This method attempts to use the `toString` method for serialization if it has been
-   * overridden by the object. If not overridden, it defaults to the object's type name and
-   * unique ID as a simple string representation.
+   * <p>This method attempts to use the `toString` method for serialization if it has been
+   * overridden by the object. If not overridden, it defaults to the object's type name and unique
+   * ID as a simple string representation.
    *
    * @param objectValue the `ObjectReference` representing the Java object.
    * @param allInheritedTypes the set of all inherited types for the object, used to identify
-   *                           whether the object belongs to a standard Java package.
+   *     whether the object belongs to a standard Java package.
    * @param thread the current thread used for method invocation.
-   * @param refPath a set containing the unique IDs of previously visited object references
-   *                to prevent circular references.
+   * @param refPath a set containing the unique IDs of previously visited object references to
+   *     prevent circular references.
    * @return the JSON string representation of the Java object, or `null` if unsupported.
    */
   private static String handleJavaObject(
-          ObjectReference objectValue,
-          Set<String> allInheritedTypes,
-          ThreadReference thread,
-          Set<Long> refPath) {
+      ObjectReference objectValue,
+      Set<String> allInheritedTypes,
+      ThreadReference thread,
+      Set<Long> refPath) {
     // Iterate over the object's inherited types to determine its behavior
     for (String type : allInheritedTypes) {
       if (type.startsWith("java")) {
         // Check if the `toString` method is overridden (not the default from `Object`)
         boolean hasOverriddenToString =
-                !objectValue
-                        .referenceType()
-                        .methodsByName("toString")
-                        .get(0)
-                        .declaringType()
-                        .name()
-                        .equals(JAVA_LANG_OBJECT);
+            !objectValue
+                .referenceType()
+                .methodsByName("toString")
+                .get(0)
+                .declaringType()
+                .name()
+                .equals(JAVA_LANG_OBJECT);
 
         if (hasOverriddenToString) {
           // Use the result of the overridden `toString` method
@@ -308,27 +316,27 @@ public class ValueJsonSerializer {
     return null; // No Java-related types found for this object
   }
 
-
   /**
    * Serializes an object by iterating through its fields and converting each field to JSON.
    *
-   * This method handles complex objects that are not maps, collections, or primitive wrappers.
-   * It retrieves all fields of the object, serializes their names and values, and constructs
-   * a JSON object with these key-value pairs.
+   * <p>This method handles complex objects that are not maps, collections, or primitive wrappers.
+   * It retrieves all fields of the object, serializes their names and values, and constructs a JSON
+   * object with these key-value pairs.
    *
    * @param objectValue the `ObjectReference` representing the object to be serialized.
    * @param thread the current thread used for method invocation and serialization.
-   * @param refPath a set containing the unique IDs of previously visited object references
-   *                to prevent circular references.
+   * @param refPath a set containing the unique IDs of previously visited object references to
+   *     prevent circular references.
    * @return the JSON string representation of the object's fields.
    */
-  private static String handleObjectFields(ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
+  private static String handleObjectFields(
+      ObjectReference objectValue, ThreadReference thread, Set<Long> refPath) {
     StringBuilder str = new StringBuilder("{");
     boolean hasOne = false; // Tracks if the object has any fields
 
     // Retrieve and iterate over all fields and their values
     for (Map.Entry<Field, Value> fieldValueEntry :
-            objectValue.getValues(((ClassType) objectValue.type()).allFields()).entrySet()) {
+        objectValue.getValues(((ClassType) objectValue.type()).allFields()).entrySet()) {
       String fieldName = fieldValueEntry.getKey().name();
       String fieldValue = toJsonInner(fieldValueEntry.getValue(), thread, refPath);
 
@@ -349,8 +357,8 @@ public class ValueJsonSerializer {
   /**
    * Checks if a given set of inherited types belongs to a simple wrapper object.
    *
-   * A "simple wrapper object" is defined as one of the following Java wrapper types:
-   * - Integer, Byte, Double, Float, Long, Short, Boolean, or Character.
+   * <p>A "simple wrapper object" is defined as one of the following Java wrapper types: - Integer,
+   * Byte, Double, Float, Long, Short, Boolean, or Character.
    *
    * @param allInheritedTypes a set containing all inherited types for an object.
    * @return `true` if the object is a simple wrapper type, otherwise `false`.
@@ -369,10 +377,8 @@ public class ValueJsonSerializer {
   /**
    * Determines if a given `Value` is a simple value.
    *
-   * Simple values include:
-   * - Primitive values (e.g., `int`, `double`, `boolean`).
-   * - String values.
-   * - Objects that are simple wrapper types (e.g., `Integer`, `Boolean`).
+   * <p>Simple values include: - Primitive values (e.g., `int`, `double`, `boolean`). - String
+   * values. - Objects that are simple wrapper types (e.g., `Integer`, `Boolean`).
    *
    * @param value the `Value` to evaluate.
    * @return `true` if the value is simple, otherwise `false`.
@@ -390,9 +396,7 @@ public class ValueJsonSerializer {
   /**
    * Generates a string representation for an `ObjectReference`.
    *
-   * The string representation includes:
-   * - The object's type name.
-   * - The unique ID of the object.
+   * <p>The string representation includes: - The object's type name. - The unique ID of the object.
    *
    * @param valRef the `ObjectReference` to represent as a string.
    * @return a formatted string representation of the object, including its type and unique ID.
@@ -405,16 +409,14 @@ public class ValueJsonSerializer {
   /**
    * Retrieves all inherited types (class and interface names) for a given `Value`.
    *
-   * This method walks through the inheritance hierarchy of the value's type, collecting:
-   * - The name of the value's immediate type.
-   * - All implemented interface types.
-   * - All parent (superclass) types up to `java.lang.Object`.
+   * <p>This method walks through the inheritance hierarchy of the value's type, collecting: - The
+   * name of the value's immediate type. - All implemented interface types. - All parent
+   * (superclass) types up to `java.lang.Object`.
    *
    * @param value the `Value` whose inheritance hierarchy is to be analyzed.
    * @return a set of all inherited type names (excluding `java.lang.Object`).
    */
-  @NotNull
-  private static Set<String> getAllInheritedTypes(Value value) {
+  @NotNull private static Set<String> getAllInheritedTypes(Value value) {
     Set<String> allInheritedTypes = new HashSet<>();
     ClassType type = ((ClassType) value.type());
 
@@ -438,26 +440,23 @@ public class ValueJsonSerializer {
     return allInheritedTypes;
   }
 
-
   /**
    * Escapes special characters in a string to make it JSON-safe.
    *
-   * The method replaces characters that might interfere with JSON parsing, such as:
-   * - Backslashes (`\`).
-   * - Double quotes (`"`).
-   * - Special control characters (`\b`, `\f`, `\n`, `\r`, `\t`).
+   * <p>The method replaces characters that might interfere with JSON parsing, such as: -
+   * Backslashes (`\`). - Double quotes (`"`). - Special control characters (`\b`, `\f`, `\n`, `\r`,
+   * `\t`).
    *
    * @param raw the raw string to escape.
    * @return the escaped string, safe for inclusion in a JSON string.
    */
   private static String escape(String raw) {
     return raw.replace("\\", "\\\\") // Escape backslashes
-            .replace("\"", "\\\"")      // Escape double quotes
-            .replace("\b", "\\b")       // Escape backspace
-            .replace("\f", "\\f")       // Escape form feed
-            .replace("\n", "\\n")       // Escape newline
-            .replace("\r", "\\r")       // Escape carriage return
-            .replace("\t", "\\t");      // Escape tab
+        .replace("\"", "\\\"") // Escape double quotes
+        .replace("\b", "\\b") // Escape backspace
+        .replace("\f", "\\f") // Escape form feed
+        .replace("\n", "\\n") // Escape newline
+        .replace("\r", "\\r") // Escape carriage return
+        .replace("\t", "\\t"); // Escape tab
   }
-
 }

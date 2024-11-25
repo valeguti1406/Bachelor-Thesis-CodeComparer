@@ -17,32 +17,31 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.thesis.codecomparer.dataModels.BreakpointState;
 import com.thesis.codecomparer.ui.CodeComparerIcons;
-
+import com.thesis.codecomparer.ui.CodeComparerUI;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import com.thesis.codecomparer.ui.CodeComparerUI;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Listener for the IntelliJ Debugger session.
- * - Collects breakpoint state information during debugging.
- * - Performs step-into, step-out, and resume operations while gathering method and return value details.
- * - Saves collected data to a JSON file for analysis.
- * - Updates the CodeComparer UI to show relevant debugging details.
+ * Listener for the IntelliJ Debugger session. - Collects breakpoint state information during
+ * debugging. - Performs step-into, step-out, and resume operations while gathering method and
+ * return value details. - Saves collected data to a JSON file for analysis. - Updates the
+ * CodeComparer UI to show relevant debugging details.
  */
 public class DebugSessionListener implements XDebugSessionListener {
 
   private static final Logger LOGGER = Logger.getInstance(DebugSessionListener.class);
-  private static final String CONTENT_ID = "com.thesis.CodeComparer";  // Identifier for the debugging tab content
+  private static final String CONTENT_ID =
+      "com.thesis.CodeComparer"; // Identifier for the debugging tab content
 
-  private final CodeComparerUI codeComparerUI;  // UI manager for the CodeComparer tab
+  private final CodeComparerUI codeComparerUI; // UI manager for the CodeComparer tab
 
   private final XDebugSession debugSession; // Current debugger session
 
-  private final String outputDirectoryPath = "CodeComparer-Plugin/output"; // Directory for saving JSON output
+  private final String outputDirectoryPath =
+      "CodeComparer-Plugin/output"; // Directory for saving JSON output
   private final String outputFileName = "collected_states2.txt"; // Output file name
   private File outputFile; // Reference to the output file
 
@@ -54,6 +53,7 @@ public class DebugSessionListener implements XDebugSessionListener {
 
   /**
    * Constructor for initializing the DebugSessionListener.
+   *
    * @param debugProcess The debugging process to attach the listener to.
    */
   public DebugSessionListener(@NotNull XDebugProcess debugProcess) {
@@ -74,16 +74,15 @@ public class DebugSessionListener implements XDebugSessionListener {
             });
   }
 
-  /**
-   * Initializes the CodeComparer UI by adding a tab to the IntelliJ Debugger.
-   */
+  /** Initializes the CodeComparer UI by adding a tab to the IntelliJ Debugger. */
   private void initUI() {
     final var uiContainer = new SimpleToolWindowPanel(false, true);
     // Use the DebuggerCodeComparerUI's main panel
     uiContainer.setContent(codeComparerUI.getMainPanel());
 
     final RunnerLayoutUi ui = this.debugSession.getUI();
-    final var content = ui.createContent(
+    final var content =
+        ui.createContent(
             CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
     content.setCloseable(false);
     content.setCloseable(false); // Prevent closing the tab
@@ -125,15 +124,15 @@ public class DebugSessionListener implements XDebugSessionListener {
     LOGGER.warn("Debugger stopped");
   }
 
-  /**
-   * Creates or resets the output file for saving breakpoint states.
-   */
+  /** Creates or resets the output file for saving breakpoint states. */
   private void createOutputFile() {
     String directoryPath = outputDirectoryPath;
     File outputDir = new File(directoryPath);
 
     // Create the directory if it doesn't exist
-    if (!outputDir.exists()) { outputDir.mkdirs();}
+    if (!outputDir.exists()) {
+      outputDir.mkdirs();
+    }
 
     String filePath = directoryPath + "/" + outputFileName;
     outputFile = new File(filePath);
@@ -148,9 +147,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  /**
-   * Collects current method details and initiates a step-into operation.
-   */
+  /** Collects current method details and initiates a step-into operation. */
   private void collectAndStepInto(
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
@@ -168,14 +165,13 @@ public class DebugSessionListener implements XDebugSessionListener {
     ApplicationManager.getApplication().invokeLater(debugSession::stepInto);
   }
 
-  /**
-   * Collects details of the called method and initiates a step-out operation.
-   */
+  /** Collects details of the called method and initiates a step-out operation. */
   private void collectAndStepOut(
-          BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
+      BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
     // Collect details of the called method (after stepping into)
-    breakpointState.setBreakpointMethodCallState(breakpointStateCollector.getMethodState(javaStackFrame));
+    breakpointState.setBreakpointMethodCallState(
+        breakpointStateCollector.getMethodState(javaStackFrame));
 
     LOGGER.warn("Initiating step out...");
     // Mark that the stepping into is complete and step out is starting
@@ -186,9 +182,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     ApplicationManager.getApplication().invokeLater(debugSession::stepOut);
   }
 
-  /**
-   * Collects the return value after stepping out and resumes program execution.
-   */
+  /** Collects the return value after stepping out and resumes program execution. */
   private void collectReturnValueAndResume(
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
@@ -206,9 +200,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     ApplicationManager.getApplication().invokeLater(debugSession::resume);
   }
 
-  /**
-   * Appends the file name and line number of the current breakpoint to the state.
-   */
+  /** Appends the file name and line number of the current breakpoint to the state. */
   private void appendFileNameAndLine() {
     if (debugSession.getCurrentPosition() != null) {
       String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
@@ -218,25 +210,20 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  /**
-   * Retrieves the current stack frame proxy.
-   */
+  /** Retrieves the current stack frame proxy. */
   private StackFrameProxyImpl getStackFrameProxy() {
     JavaStackFrame currentStackFrame = (JavaStackFrame) debugSession.getCurrentStackFrame();
     if (currentStackFrame == null) {
       LOGGER.warn("Current stack frame could not be found!");
       codeComparerUI.updateErrorDisplay("Current stack frame could not be found!");
       return null;
-    }
-    else {
+    } else {
       return currentStackFrame.getStackFrameProxy();
     }
   }
 
-  /**
-   * Retrieves a BreakpointStateCollector for the current stack frame.
-   */
-  private BreakpointStateCollector getBreakpointStateCollector(){
+  /** Retrieves a BreakpointStateCollector for the current stack frame. */
+  private BreakpointStateCollector getBreakpointStateCollector() {
     StackFrameProxyImpl stackFrame = getStackFrameProxy();
     if (stackFrame == null) {
       LOGGER.warn("No stack frame available!");
@@ -246,10 +233,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     return new BreakpointStateCollector(stackFrame);
   }
 
-
-  /**
-   * Enables the "Show Method Return Values" option in debugger settings.
-   */
+  /** Enables the "Show Method Return Values" option in debugger settings. */
   private void activateReturnValueSetting() {
     // Ensure the setting is enabled when the debugger session starts
     DebuggerSettings debuggerSettings =
@@ -260,9 +244,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  /**
-   * Saves the collected state to the output file in JSON format.
-   */
+  /** Saves the collected state to the output file in JSON format. */
   private void saveStateToFile(BreakpointState breakpointState) {
     try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile, true))) {
       Gson gson = new GsonBuilder().setPrettyPrinting().create();

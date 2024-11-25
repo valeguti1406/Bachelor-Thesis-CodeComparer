@@ -3,9 +3,8 @@ package com.thesis.codecomparer.dataModels;
 import java.util.List;
 
 /**
- * Represents the state of a method during debugging.
- * This class stores the method's name, its return type,
- * and details about its arguments.
+ * Represents the state of a method during debugging. This class stores the method's name, its
+ * return type, and details about its arguments.
  */
 public class MethodState {
   private String methodName; // Name of the method
