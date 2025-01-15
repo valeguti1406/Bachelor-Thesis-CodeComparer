@@ -14,6 +14,8 @@ public class BreakpointState {
       breakpointMethodCallState; // Details about the method called at the breakpoint
   private String breakpointReturnValue; // Return value of the code executed at this breakpoint
 
+  private ExceptionInfo exceptionInfo; // Exception details if an exception occurred
+
   public String getFileName() {
     return fileName;
   }
@@ -52,5 +54,13 @@ public class BreakpointState {
 
   public void setBreakpointMethodCallState(MethodState breakpointMethodCallState) {
     this.breakpointMethodCallState = breakpointMethodCallState;
+  }
+
+  public ExceptionInfo getExceptionInfo() {
+    return exceptionInfo;
+  }
+
+  public void setExceptionInfo(ExceptionInfo exceptionInfo) {
+    this.exceptionInfo = exceptionInfo;
   }
 }

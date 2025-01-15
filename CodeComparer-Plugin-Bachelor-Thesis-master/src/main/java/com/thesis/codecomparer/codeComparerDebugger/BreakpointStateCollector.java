@@ -90,39 +90,6 @@ public class BreakpointStateCollector {
 
         // Convert return value to JSON
         return extractVariableJson(currentStackFrame, returnValue);
-      } else { // Check if there was an exception
-        // TODO
-        /*StackFrameProxyImpl stackFrameProxy = currentStackFrame.getStackFrameProxy();
-        String exceptionMessage = getExceptionFromThread(stackFrameProxy);
-
-        LOGGER.warn("Exception message: " + exceptionMessage);
-        return exceptionMessage;
-
-        List<ObjectReference> objectReferences = threadProxy.getThreadReference().referringObjects(10);
-
-        for (ObjectReference objectReference : objectReferences) {
-          if (isException(objectReference)) {
-            // Access methods and fields of the Throwable object
-            String exceptionMessage = objectReference.getValue(
-                    objectReference.referenceType().fieldByName("detailMessage")
-            ).toString();
-            LOGGER.warn("Exception message: " + exceptionMessage);
-            return exceptionMessage;
-          }
-        }
-        // Get the exception variable in the stack frame
-        LocalVariableProxyImpl argumentLocalVariable =
-                currentStackFrame.getStackFrameProxy().visibleVariableByName("Exception");
-        Value argumentValue = stackFrame.getValue(argumentLocalVariable);
-
-        if (argumentValue instanceof ObjectReference objectReference && isException(objectReference)) {
-          // Access methods and fields of the Throwable object
-          String exceptionMessage = objectReference.getValue(
-                  objectReference.referenceType().fieldByName("detailMessage")
-          ).toString();
-          LOGGER.warn("Exception message: " + exceptionMessage);
-          return exceptionMessage;
-        }*/
       }
     } catch (Exception e) {
       codeComparerUI.updateErrorDisplay("Error collecting return value" + e.getMessage());
