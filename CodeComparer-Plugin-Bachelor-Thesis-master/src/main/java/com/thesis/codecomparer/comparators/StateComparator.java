@@ -1,6 +1,8 @@
 package com.thesis.codecomparer.comparators;
 
+import com.intellij.refactoring.util.duplicates.BreakReturnValue;
 import com.thesis.codecomparer.dataModels.BreakpointState;
+import com.thesis.codecomparer.dataModels.ExceptionInfo;
 import com.thesis.codecomparer.dataModels.MethodState;
 import com.thesis.codecomparer.dataModels.VariableInfo;
 import java.util.ArrayList;
@@ -43,15 +45,54 @@ public class StateComparator {
             "  - Invoked Method"));
 
     // Compare breakpointReturnValue fields
-    if (!state1.getBreakpointReturnValue().equals(state2.getBreakpointReturnValue())) {
+    String returnValue1 = state1.getBreakpointReturnValue();
+    String returnValue2 = state2.getBreakpointReturnValue();
+    if ( returnValue1 != null &&  returnValue2 != null) {
+      if (!returnValue1.equals(returnValue2)) {
+        differences.add(
+                "  - Return Value: "
+                        + returnValue1
+                        + " != "
+                        + returnValue2);
+      }
+    } else if (returnValue1 != null || returnValue2 != null) {
       differences.add(
-          "  - Return Value: "
-              + state1.getBreakpointReturnValue()
-              + " != "
-              + state2.getBreakpointReturnValue());
+              "  - Return Value: " +
+                      (returnValue1 == null ? "null" : returnValue1) +
+                      " != " +
+                      (returnValue2 == null ? "null" : returnValue2));
     }
 
+
+    // Compare exception info
+    ExceptionInfo exception1 = state1.getExceptionInfo();
+    ExceptionInfo exception2 = state2.getExceptionInfo();
+    if (exception1!= null || exception2 != null) {
+      if (exception1 == null) {
+        differences.add("  - Exception Info: Just File " + state2.getFileName() + " has an exception: " + formatExceptionInfo(state2.getExceptionInfo()));
+      } else if (exception2 == null) {
+        differences.add("  - Exception Info: Just File " + state1.getFileName() + " has an exception: " + formatExceptionInfo(state1.getExceptionInfo()));
+      } else {
+        if (!exception1.getExceptionType().equals(exception2.getExceptionType())) {
+          differences.add(
+                  "  - Exception Type: " + exception1.getExceptionType() + " != " + exception2.getExceptionType());
+        }
+
+        if (!exception1.getExceptionMessage().equals(exception2.getExceptionMessage())) {
+          differences.add(
+                  "  - Exception Message: " + exception1.getExceptionMessage() + " != " + exception2.getExceptionMessage());
+        }
+
+        if (!exception1.getStackTrace().equals(exception2.getStackTrace())) {
+          differences.add(
+                  "  - Exception Stack Trace: " + exception1.getStackTrace() + " != " + exception2.getStackTrace());
+        }
+      }
+    }
     return differences; // Return the list of differences
+  }
+  private static String formatExceptionInfo(ExceptionInfo exceptionInfo) {
+    return "Type: " + exceptionInfo.getExceptionType() + ", Message: " + exceptionInfo.getExceptionMessage() + ", Stack Trace: " + exceptionInfo.getStackTrace();
   }
 
   /**
