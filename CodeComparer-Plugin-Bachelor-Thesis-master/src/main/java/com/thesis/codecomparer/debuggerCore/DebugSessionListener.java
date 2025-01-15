@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.codeComparerDebugger;
+package com.thesis.codecomparer.debuggerCore;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -157,7 +157,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       writer.write("====================\n"); // Add the initial separator
       LOGGER.warn("Emptied the collected states file: " + outputFile.getAbsolutePath());
     } catch (IOException e) {
-      LOGGER.error("Error emptying the collected state file", e);
+      codeComparerUI.updateErrorDisplay("Error emptying the collected state file:" + e);
     }
   }
 
@@ -198,9 +198,7 @@ public class DebugSessionListener implements XDebugSessionListener {
           && activeBreakpoint.getType()
               instanceof JavaExceptionBreakpointType) { // breakpoint is a Java Exception Breakpoint
 
-        ExceptionInfo exceptionInfo = getJavaExceptionBreakpointInfo(javaStackFrame);
-        // Save exception info in the BreakpointState
-        breakpointState.setExceptionInfo(exceptionInfo);
+          processJavaExceptionBreakpoint(javaStackFrame);
 
       } else { // line breakpoint: Collect the return value
 
@@ -213,7 +211,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     }
   }
 
-  private ExceptionInfo getJavaExceptionBreakpointInfo(JavaStackFrame javaStackFrame) {
+  private void processJavaExceptionBreakpoint(JavaStackFrame javaStackFrame) {
     EvaluationContextImpl evalContext = createEvaluationContext();
     if (evalContext != null) {
       SuspendContextImpl suspendContext = evalContext.getSuspendContext();
@@ -222,10 +220,9 @@ public class DebugSessionListener implements XDebugSessionListener {
       if (!exceptionEvents.isEmpty()) {
         ExceptionEvent exceptionEvent = exceptionEvents.get(0);
         ObjectReference exceptionObject = exceptionEvent.exception();
-        return processExceptionObject(javaStackFrame, exceptionObject);
+        processExceptionObject(javaStackFrame, exceptionObject);
       }
     }
-    return null;
   }
 
   // Creates the EvaluationContextImpl for the given DebugSession
@@ -246,7 +243,7 @@ public class DebugSessionListener implements XDebugSessionListener {
   }
 
   // Processes the ExceptionObject, extracting its details and stack trace
-  private ExceptionInfo processExceptionObject(
+  private void processExceptionObject(
       JavaStackFrame javaStackFrame, ObjectReference exceptionObject) {
     try {
       // Extract exception details
@@ -260,10 +257,11 @@ public class DebugSessionListener implements XDebugSessionListener {
       exceptionInfo.setExceptionMessage(exceptionMessage);
       exceptionInfo.setStackTrace(stackTrace);
 
-      return exceptionInfo;
+      codeComparerUI.updateErrorDisplay("Java Exception thrown: " + exceptionInfo.getExceptionType());
+      // Save exception info in the BreakpointState
+      breakpointState.setExceptionInfo(exceptionInfo);
     } catch (Exception e) {
-      LOGGER.error("Error processing exception object", e);
-      return null;
+      codeComparerUI.updateErrorDisplay("Error processing exception object:" + e);
     }
   }
 

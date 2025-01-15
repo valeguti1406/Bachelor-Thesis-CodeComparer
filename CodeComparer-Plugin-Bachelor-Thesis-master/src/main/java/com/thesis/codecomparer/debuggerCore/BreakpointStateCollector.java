@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.codeComparerDebugger;
+package com.thesis.codecomparer.debuggerCore;
 
 import com.intellij.debugger.engine.DebugProcessImpl;
 import com.intellij.debugger.engine.JavaStackFrame;

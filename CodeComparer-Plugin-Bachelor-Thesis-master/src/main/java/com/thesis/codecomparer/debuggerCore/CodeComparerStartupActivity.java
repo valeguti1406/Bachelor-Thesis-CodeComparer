@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.codeComparerDebugger;
+package com.thesis.codecomparer.debuggerCore;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;

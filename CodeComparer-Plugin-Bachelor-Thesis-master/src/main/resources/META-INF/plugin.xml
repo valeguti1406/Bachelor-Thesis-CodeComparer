@@ -32,11 +32,11 @@
     <!-- Extension points defined by the plugin.
          Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
     <extensions defaultExtensionNs="com.intellij">
-        <postStartupActivity implementation="com.thesis.codecomparer.codeComparerDebugger.CodeComparerStartupActivity"/>
+        <postStartupActivity implementation="com.thesis.codecomparer.debuggerCore.CodeComparerStartupActivity"/>
     </extensions>
 
     <projectListeners>
-        <listener class="com.thesis.codecomparer.codeComparerDebugger.DebuggerManagerListener"
+        <listener class="com.thesis.codecomparer.debuggerCore.DebuggerManagerListener"
                   topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
     </projectListeners>
 
