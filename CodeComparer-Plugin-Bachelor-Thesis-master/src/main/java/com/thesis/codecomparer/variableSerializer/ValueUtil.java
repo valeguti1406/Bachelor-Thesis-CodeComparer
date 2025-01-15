@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.variableExtractor;
+package com.thesis.codecomparer.variableSerializer;
 
 import com.sun.jdi.*;
 import com.thesis.codecomparer.ui.CodeComparerUI;

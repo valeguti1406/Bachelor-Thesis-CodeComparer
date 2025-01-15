@@ -1,6 +1,6 @@
-package com.thesis.codecomparer.variableExtractor;
+package com.thesis.codecomparer.variableSerializer;
 
-import static com.thesis.codecomparer.variableExtractor.ValueUtil.invokeMethod;
+import static com.thesis.codecomparer.variableSerializer.ValueUtil.invokeMethod;
 
 import com.sun.jdi.*;
 import java.util.HashSet;

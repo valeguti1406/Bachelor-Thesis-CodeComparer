@@ -1,4 +1,4 @@
-package com.thesis.codecomparer.variableExtractor;
+package com.thesis.codecomparer.variableSerializer;
 
 /**
  * Custom exception class used to handle JSON serialization errors.

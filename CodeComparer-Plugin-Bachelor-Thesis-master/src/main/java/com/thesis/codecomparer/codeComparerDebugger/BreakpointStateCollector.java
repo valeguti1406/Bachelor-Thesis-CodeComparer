@@ -11,7 +11,7 @@ import com.sun.jdi.*;
 import com.thesis.codecomparer.dataModels.MethodState;
 import com.thesis.codecomparer.dataModels.VariableInfo;
 import com.thesis.codecomparer.ui.CodeComparerUI;
-import com.thesis.codecomparer.variableExtractor.ValueJsonSerializer;
+import com.thesis.codecomparer.variableSerializer.ValueJsonSerializer;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
 
@@ -90,12 +90,67 @@ public class BreakpointStateCollector {
 
         // Convert return value to JSON
         return extractVariableJson(currentStackFrame, returnValue);
+      } else { // Check if there was an exception
+        // TODO
+        /*StackFrameProxyImpl stackFrameProxy = currentStackFrame.getStackFrameProxy();
+        String exceptionMessage = getExceptionFromThread(stackFrameProxy);
+
+        LOGGER.warn("Exception message: " + exceptionMessage);
+        return exceptionMessage;
+
+        List<ObjectReference> objectReferences = threadProxy.getThreadReference().referringObjects(10);
+
+        for (ObjectReference objectReference : objectReferences) {
+          if (isException(objectReference)) {
+            // Access methods and fields of the Throwable object
+            String exceptionMessage = objectReference.getValue(
+                    objectReference.referenceType().fieldByName("detailMessage")
+            ).toString();
+            LOGGER.warn("Exception message: " + exceptionMessage);
+            return exceptionMessage;
+          }
+        }
+        // Get the exception variable in the stack frame
+        LocalVariableProxyImpl argumentLocalVariable =
+                currentStackFrame.getStackFrameProxy().visibleVariableByName("Exception");
+        Value argumentValue = stackFrame.getValue(argumentLocalVariable);
+
+        if (argumentValue instanceof ObjectReference objectReference && isException(objectReference)) {
+          // Access methods and fields of the Throwable object
+          String exceptionMessage = objectReference.getValue(
+                  objectReference.referenceType().fieldByName("detailMessage")
+          ).toString();
+          LOGGER.warn("Exception message: " + exceptionMessage);
+          return exceptionMessage;
+        }*/
       }
     } catch (Exception e) {
       codeComparerUI.updateErrorDisplay("Error collecting return value" + e.getMessage());
       return "Error collecting return value";
     }
     return "There is no return value for the last executed method";
+  }
+
+  /**
+   * Checks if the given ObjectReference represents an exception.
+   *
+   * @param objectReference The object reference to check.
+   * @return True if the object is an instance of Throwable, false otherwise.
+   */
+  private boolean isException(ObjectReference objectReference) {
+    try {
+      // Retrieve the object's runtime class and check if it or its superclass is Throwable
+      Class<?> objectClass = Class.forName(objectReference.referenceType().name());
+      while (objectClass != null) {
+        if ("java.lang.Throwable".equals(objectClass.getTypeName())) {
+          return true;
+        }
+        objectClass = objectClass.getSuperclass(); // Navigate to the superclass
+      }
+    } catch (Exception e) {
+      LOGGER.error("Error while checking if object is an exception: " + e.getMessage(), e);
+    }
+    return false;
   }
 
   /**
