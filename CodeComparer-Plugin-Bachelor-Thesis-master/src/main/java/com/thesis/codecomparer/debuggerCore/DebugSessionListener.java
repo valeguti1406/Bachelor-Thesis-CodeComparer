@@ -27,7 +27,7 @@ import com.intellij.xdebugger.impl.XDebugSessionImpl;
 import com.sun.jdi.*;
 import com.sun.jdi.event.ExceptionEvent;
 import com.thesis.codecomparer.dataModels.BreakpointState;
-import com.thesis.codecomparer.dataModels.ExceptionInfo;
+import com.thesis.codecomparer.dataModels.ExceptionDetails;
 import com.thesis.codecomparer.ui.CodeComparerIcons;
 import com.thesis.codecomparer.ui.CodeComparerUI;
 import java.io.BufferedWriter;
@@ -98,7 +98,6 @@ public class DebugSessionListener implements XDebugSessionListener {
     final var content =
         ui.createContent(
             CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
-    content.setCloseable(false);
     content.setCloseable(false); // Prevent closing the tab
 
     UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
@@ -179,7 +178,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
     // Collect details of the called method (after stepping into)
-    breakpointState.setBreakpointMethodCallState(
+    breakpointState.setInvokedMethodState(
         breakpointStateCollector.getMethodState(javaStackFrame));
 
     LOGGER.warn("in collectAndStepOut, step out now");
@@ -202,7 +201,7 @@ public class DebugSessionListener implements XDebugSessionListener {
 
       } else { // line breakpoint: Collect the return value
 
-        breakpointState.setBreakpointReturnValue(
+        breakpointState.setInvokedMethodReturnValue(
             breakpointStateCollector.getReturnValue(javaStackFrame));
       }
       // Save the complete BreakpointState to file
@@ -251,15 +250,15 @@ public class DebugSessionListener implements XDebugSessionListener {
       String exceptionMessage = extractExceptionMessage(exceptionObject);
       String stackTrace = extractStackTrace(javaStackFrame, exceptionObject);
 
-      // Create a new ExceptionInfo object to store exception details
-      ExceptionInfo exceptionInfo = new ExceptionInfo();
+      // Create a new ExceptionDetails object to store exception details
+      ExceptionDetails exceptionInfo = new ExceptionDetails();
       exceptionInfo.setExceptionType(exceptionType);
       exceptionInfo.setExceptionMessage(exceptionMessage);
       exceptionInfo.setStackTrace(stackTrace);
 
       codeComparerUI.updateErrorDisplay("Java Exception thrown: " + exceptionInfo.getExceptionType());
       // Save exception info in the BreakpointState
-      breakpointState.setExceptionInfo(exceptionInfo);
+      breakpointState.setExceptionDetails(exceptionInfo);
     } catch (Exception e) {
       codeComparerUI.updateErrorDisplay("Error processing exception object:" + e);
     }
@@ -357,7 +356,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       String fileName = debugSession.getCurrentPosition().getFile().getNameWithoutExtension();
       int line = debugSession.getCurrentPosition().getLine() + 1;
       breakpointState.setFileName(fileName);
-      breakpointState.setBreakpointInLine(line);
+      breakpointState.setLineNumber(line);
     }
   }
 

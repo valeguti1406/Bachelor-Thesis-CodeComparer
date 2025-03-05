@@ -76,7 +76,7 @@ public class FileComparator {
       String location = getBreakpointLocation(i, file1States, file2States);
 
       // Collect differences for the current breakpoint
-      List<String> differences = getBreakpointDifferences(i, file1States, file2States);
+      List<String> differences = getBreakpointDifferences(i, file1States,file1Name, file2States, file2Name);
 
       if (differences.isEmpty()) {
         // No differences for this breakpoint
@@ -129,10 +129,10 @@ public class FileComparator {
       int index, List<BreakpointState> file1States, List<BreakpointState> file2States) {
     if (index < file1States.size()) {
       BreakpointState state1 = file1States.get(index);
-      return " (File: " + state1.getFileName() + ", Line: " + state1.getBreakpointInLine() + ")";
+      return " (Class: " + state1.getFileName() + ", Line: " + state1.getLineNumber() + ")";
     } else if (index < file2States.size()) {
       BreakpointState state2 = file2States.get(index);
-      return " (File: " + state2.getFileName() + ", Line: " + state2.getBreakpointInLine() + ")";
+      return " (Class: " + state2.getFileName() + ", Line: " + state2.getLineNumber() + ")";
     }
     return "";
   }
@@ -146,10 +146,10 @@ public class FileComparator {
    * @return A list of strings describing differences, or an empty list if no differences exist.
    */
   private static List<String> getBreakpointDifferences(
-      int index, List<BreakpointState> file1States, List<BreakpointState> file2States) {
+      int index, List<BreakpointState> file1States, String file1Name, List<BreakpointState> file2States, String file2Name) {
     if (index < file1States.size() && index < file2States.size()) {
       return StateComparator.compareBreakpointStates(
-          file1States.get(index), file2States.get(index));
+          file1States.get(index), file1Name, file2States.get(index), file2Name);
     }
     return new ArrayList<>();
   }

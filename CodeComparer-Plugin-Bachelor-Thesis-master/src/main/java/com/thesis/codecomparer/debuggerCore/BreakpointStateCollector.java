@@ -9,7 +9,7 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.sun.jdi.*;
 import com.thesis.codecomparer.dataModels.MethodState;
-import com.thesis.codecomparer.dataModels.VariableInfo;
+import com.thesis.codecomparer.dataModels.ParameterInfo;
 import com.thesis.codecomparer.ui.CodeComparerUI;
 import com.thesis.codecomparer.variableSerializer.ValueJsonSerializer;
 import java.util.*;
@@ -59,8 +59,8 @@ public class BreakpointStateCollector {
       methodState.setReturnType(currentMethod.returnType().name());
 
       // Collect and set arguments in the MethodState
-      List<VariableInfo> argumentInfos = extractArgumentsInfo(currentStackFrame, currentMethod);
-      methodState.setArguments(argumentInfos);
+      List<ParameterInfo> argumentInfos = extractArgumentsInfo(currentStackFrame, currentMethod);
+      methodState.setParameters(argumentInfos);
 
       return methodState;
     } catch (EvaluateException e) {
@@ -80,7 +80,7 @@ public class BreakpointStateCollector {
    * @return A JSON representation of the return value, or a default message if no value exists.
    */
   public String getReturnValue(JavaStackFrame currentStackFrame) {
-    LOGGER.warn("In getReturnValue");
+    LOGGER.warn("In getInvokedMethodReturnValue");
     try {
       // Retrieve the last executed method and its return value
       Pair<Method, Value> methodValuePair =
@@ -96,28 +96,6 @@ public class BreakpointStateCollector {
       return "Error collecting return value";
     }
     return "There is no return value for the last executed method";
-  }
-
-  /**
-   * Checks if the given ObjectReference represents an exception.
-   *
-   * @param objectReference The object reference to check.
-   * @return True if the object is an instance of Throwable, false otherwise.
-   */
-  private boolean isException(ObjectReference objectReference) {
-    try {
-      // Retrieve the object's runtime class and check if it or its superclass is Throwable
-      Class<?> objectClass = Class.forName(objectReference.referenceType().name());
-      while (objectClass != null) {
-        if ("java.lang.Throwable".equals(objectClass.getTypeName())) {
-          return true;
-        }
-        objectClass = objectClass.getSuperclass(); // Navigate to the superclass
-      }
-    } catch (Exception e) {
-      LOGGER.error("Error while checking if object is an exception: " + e.getMessage(), e);
-    }
-    return false;
   }
 
   /**
@@ -147,11 +125,11 @@ public class BreakpointStateCollector {
    *
    * @param currentStackFrame The current stack frame in the debugger session.
    * @param currentMethod The method being executed in the stack frame.
-   * @return A list of VariableInfo objects, each representing an argument.
+   * @return A list of ParameterInfo objects, each representing an argument.
    */
-  private List<VariableInfo> extractArgumentsInfo(
+  private List<ParameterInfo> extractArgumentsInfo(
       JavaStackFrame currentStackFrame, Method currentMethod) {
-    List<VariableInfo> argumentInfos = new ArrayList<>();
+    List<ParameterInfo> argumentInfos = new ArrayList<>();
 
     try {
       // Get the list of method arguments
@@ -168,7 +146,7 @@ public class BreakpointStateCollector {
 
         // Convert the argument value to JSON and add it to the list
         String jsonRepresentation = extractVariableJson(currentStackFrame, argumentValue);
-        argumentInfos.add(new VariableInfo(argumentName, jsonRepresentation));
+        argumentInfos.add(new ParameterInfo(argumentName, jsonRepresentation));
       }
     } catch (AbsentInformationException e) {
       codeComparerUI.updateErrorDisplay("Getting Method Arguments was not possible");

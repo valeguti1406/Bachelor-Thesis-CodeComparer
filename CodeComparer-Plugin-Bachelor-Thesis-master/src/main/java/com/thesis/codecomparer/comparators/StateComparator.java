@@ -1,10 +1,9 @@
 package com.thesis.codecomparer.comparators;
 
-import com.intellij.refactoring.util.duplicates.BreakReturnValue;
 import com.thesis.codecomparer.dataModels.BreakpointState;
-import com.thesis.codecomparer.dataModels.ExceptionInfo;
+import com.thesis.codecomparer.dataModels.ExceptionDetails;
 import com.thesis.codecomparer.dataModels.MethodState;
-import com.thesis.codecomparer.dataModels.VariableInfo;
+import com.thesis.codecomparer.dataModels.ParameterInfo;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,18 +17,18 @@ public class StateComparator {
    * @return A list of strings describing the differences between the two BreakpointState objects.
    */
   public static List<String> compareBreakpointStates(
-      BreakpointState state1, BreakpointState state2) {
+      BreakpointState state1,String file1Name, BreakpointState state2, String file2Name) {
     List<String> differences = new ArrayList<>();
 
-    // Compare fileName fields
+    // Compare class fields
     if (!state1.getFileName().equals(state2.getFileName())) {
-      differences.add("  - File Name: " + state1.getFileName() + " != " + state2.getFileName());
+      differences.add("  - Class Name: " + state1.getFileName() + " != " + state2.getFileName());
     }
 
     // Compare breakpointInLine fields
-    if (state1.getBreakpointInLine() != state2.getBreakpointInLine()) {
+    if (state1.getLineNumber() != state2.getLineNumber()) {
       differences.add(
-          "  - Line: " + state1.getBreakpointInLine() + " != " + state2.getBreakpointInLine());
+          "  - Line: " + state1.getLineNumber() + " != " + state2.getLineNumber());
     }
 
     // Compare the currentMethodState fields
@@ -40,13 +39,13 @@ public class StateComparator {
     // Compare the breakpointMethodCallState fields
     differences.addAll(
         compareMethodStates(
-            state1.getBreakpointMethodCallState(),
-            state2.getBreakpointMethodCallState(),
+            state1.getInvokedMethodState(),
+            state2.getInvokedMethodState(),
             "  - Invoked Method"));
 
     // Compare breakpointReturnValue fields
-    String returnValue1 = state1.getBreakpointReturnValue();
-    String returnValue2 = state2.getBreakpointReturnValue();
+    String returnValue1 = state1.getInvokedMethodReturnValue();
+    String returnValue2 = state2.getInvokedMethodReturnValue();
     if ( returnValue1 != null &&  returnValue2 != null) {
       if (!returnValue1.equals(returnValue2)) {
         differences.add(
@@ -65,13 +64,13 @@ public class StateComparator {
 
 
     // Compare exception info
-    ExceptionInfo exception1 = state1.getExceptionInfo();
-    ExceptionInfo exception2 = state2.getExceptionInfo();
+    ExceptionDetails exception1 = state1.getExceptionDetails();
+    ExceptionDetails exception2 = state2.getExceptionDetails();
     if (exception1!= null || exception2 != null) {
       if (exception1 == null) {
-        differences.add("  - Exception Info: Just File " + state2.getFileName() + " has an exception: " + formatExceptionInfo(state2.getExceptionInfo()));
+        differences.add("  - Exception Info: Just File " + file1Name + " has an exception: \n" + formatExceptionInfo(state2.getExceptionDetails()));
       } else if (exception2 == null) {
-        differences.add("  - Exception Info: Just File " + state1.getFileName() + " has an exception: " + formatExceptionInfo(state1.getExceptionInfo()));
+        differences.add("  - Exception Info: Just File " + file2Name + " has an exception: \n" + formatExceptionInfo(state1.getExceptionDetails()));
       } else {
         if (!exception1.getExceptionType().equals(exception2.getExceptionType())) {
           differences.add(
@@ -91,8 +90,8 @@ public class StateComparator {
     }
     return differences; // Return the list of differences
   }
-  private static String formatExceptionInfo(ExceptionInfo exceptionInfo) {
-    return "Type: " + exceptionInfo.getExceptionType() + ", Message: " + exceptionInfo.getExceptionMessage() + ", Stack Trace: " + exceptionInfo.getStackTrace();
+  private static String formatExceptionInfo(ExceptionDetails exceptionInfo) {
+    return "Type: " + exceptionInfo.getExceptionType() + "\n Message: " + exceptionInfo.getExceptionMessage() + "\n Stack Trace: " + exceptionInfo.getStackTrace();
   }
 
   /**
@@ -124,20 +123,20 @@ public class StateComparator {
     }
 
     // Compare the size of the arguments lists
-    if (method1.getArguments().size() != method2.getArguments().size()) {
+    if (method1.getParameters().size() != method2.getParameters().size()) {
       differences.add(
           context
               + " -> Arguments: size mismatch ("
-              + method1.getArguments().size()
+              + method1.getParameters().size()
               + " != "
-              + method2.getArguments().size()
+              + method2.getParameters().size()
               + ")");
     }
     // Compare individual arguments if sizes match
     else {
-      for (int i = 0; i < method1.getArguments().size(); i++) {
-        VariableInfo arg1 = method1.getArguments().get(i);
-        VariableInfo arg2 = method2.getArguments().get(i);
+      for (int i = 0; i < method1.getParameters().size(); i++) {
+        ParameterInfo arg1 = method1.getParameters().get(i);
+        ParameterInfo arg2 = method2.getParameters().get(i);
 
         // Compare argument names
         if (!arg1.getName().equals(arg2.getName())) {
@@ -152,15 +151,15 @@ public class StateComparator {
         }
 
         // Compare argument JSON representations
-        if (!arg1.getJsonRepresentation().equals(arg2.getJsonRepresentation())) {
+        if (!arg1.getSerializedValue().equals(arg2.getSerializedValue())) {
           differences.add(
               context
                   + " -> Argument["
                   + i
                   + "] JSON: "
-                  + arg1.getJsonRepresentation()
+                  + arg1.getSerializedValue()
                   + " != "
-                  + arg2.getJsonRepresentation());
+                  + arg2.getSerializedValue());
         }
       }
     }

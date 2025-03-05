@@ -1,6 +1,6 @@
 package com.thesis.codecomparer.dataModels;
 
-public class ExceptionInfo {
+public class ExceptionDetails {
   private String exceptionType;
   private String exceptionMessage;
   private String stackTrace;

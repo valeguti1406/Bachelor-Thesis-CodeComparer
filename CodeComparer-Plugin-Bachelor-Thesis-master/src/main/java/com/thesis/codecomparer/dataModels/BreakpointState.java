@@ -8,13 +8,13 @@ package com.thesis.codecomparer.dataModels;
 public class BreakpointState {
 
   private String fileName; // File where the breakpoint is set
-  private int breakpointInLine; // Line number of the breakpoint
+  private int lineNumber; // Line number of the breakpoint
   private MethodState currentMethodState; // Details about the method containing the breakpoint
   private MethodState
-      breakpointMethodCallState; // Details about the method called at the breakpoint
-  private String breakpointReturnValue; // Return value of the code executed at this breakpoint
+          invokedMethodState; // Details about the method called at the breakpoint
+  private String invokedMethodReturnValue; // Return value of the invoked method at the breakpoint
 
-  private ExceptionInfo exceptionInfo; // Exception details if an exception occurred
+  private ExceptionDetails exceptionDetails; // Exception details if an exception occurred at the breakpoint
 
   public String getFileName() {
     return fileName;
@@ -24,12 +24,12 @@ public class BreakpointState {
     this.fileName = fileName;
   }
 
-  public int getBreakpointInLine() {
-    return breakpointInLine;
+  public int getLineNumber() {
+    return lineNumber;
   }
 
-  public void setBreakpointInLine(int breakpointInLine) {
-    this.breakpointInLine = breakpointInLine;
+  public void setLineNumber(int lineNumber) {
+    this.lineNumber = lineNumber;
   }
 
   public MethodState getCurrentMethodState() {
@@ -40,27 +40,27 @@ public class BreakpointState {
     this.currentMethodState = currentMethodState;
   }
 
-  public String getBreakpointReturnValue() {
-    return breakpointReturnValue;
+  public String getInvokedMethodReturnValue() {
+    return invokedMethodReturnValue;
   }
 
-  public void setBreakpointReturnValue(String breakpointReturnValue) {
-    this.breakpointReturnValue = breakpointReturnValue;
+  public void setInvokedMethodReturnValue(String invokedMethodReturnValue) {
+    this.invokedMethodReturnValue = invokedMethodReturnValue;
   }
 
-  public MethodState getBreakpointMethodCallState() {
-    return breakpointMethodCallState;
+  public MethodState getInvokedMethodState() {
+    return invokedMethodState;
   }
 
-  public void setBreakpointMethodCallState(MethodState breakpointMethodCallState) {
-    this.breakpointMethodCallState = breakpointMethodCallState;
+  public void setInvokedMethodState(MethodState invokedMethodState) {
+    this.invokedMethodState = invokedMethodState;
   }
 
-  public ExceptionInfo getExceptionInfo() {
-    return exceptionInfo;
+  public ExceptionDetails getExceptionDetails() {
+    return exceptionDetails;
   }
 
-  public void setExceptionInfo(ExceptionInfo exceptionInfo) {
-    this.exceptionInfo = exceptionInfo;
+  public void setExceptionDetails(ExceptionDetails exceptionDetails) {
+    this.exceptionDetails = exceptionDetails;
   }
 }
