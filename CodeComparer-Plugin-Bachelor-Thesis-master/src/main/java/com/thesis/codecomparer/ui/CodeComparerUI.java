@@ -267,4 +267,24 @@ public class CodeComparerUI {
   public JPanel getMainPanel() {
     return mainPanel;
   }
+
+  /**
+   * Resets the UI components to their initial state by removing all existing elements
+   * and re-adding them. This ensures that the UI is refreshed when a new debugging
+   * session starts, preventing outdated messages from persisting.
+   */
+  public void resetUI() {
+    // Remove all components from the panel
+    mainPanel.removeAll();
+
+    // Re-add components to restore the initial UI state
+    addStatusPanels();
+    addFileSelectionPanel();
+    addReportArea();
+
+    // Refresh UI
+    mainPanel.revalidate();
+    mainPanel.repaint();
+  }
+
 }

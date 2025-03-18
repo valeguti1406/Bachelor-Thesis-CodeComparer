@@ -90,16 +90,22 @@ public class DebugSessionListener implements XDebugSessionListener {
 
   /** Initializes the CodeComparer UI by adding a tab to the IntelliJ Debugger. */
   private void initUI() {
+    // Reset the UI before creating a new content panel
+    codeComparerUI.resetUI();
+
+    // Create a new UI container
     final var uiContainer = new SimpleToolWindowPanel(false, true);
     // Use the DebuggerCodeComparerUI's main panel
     uiContainer.setContent(codeComparerUI.getMainPanel());
 
     final RunnerLayoutUi ui = this.debugSession.getUI();
+    // Create new content for the tab
     final var content =
         ui.createContent(
             CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
     content.setCloseable(false); // Prevent closing the tab
 
+    // Add the updated UI content
     UIUtil.invokeLaterIfNeeded(() -> ui.addContent(content));
   }
 
