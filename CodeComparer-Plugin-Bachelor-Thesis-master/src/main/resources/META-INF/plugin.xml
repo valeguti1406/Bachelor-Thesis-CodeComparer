@@ -14,14 +14,9 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-   Java Code Comparison Tool: Ensuring Functional Stability Across Versions.
-    Allows developers to automatically compare the behavior of two versions of a Java class and verify that changes
-    have not disrupted its functionality.
-     The tool works by running both the original (baseline) and modified versions of a class,
-     capturing the internal state of key variables at specific execution points,
-     and comparing these states to identify any differences.
-     The goal is to provide an automated way to ensure that modifications to the codebase
-     or external dependencies have not affected the correctness of the class.
+   CodeComparer – Detect hidden breaking changes in third-party libraries.
+Automatically captures and compares runtime behavior across library versions using IntelliJ's debugger.
+Identify functional changes in variable states, return values, or exceptions without writing new tests.
   ]]></description>
 
     <!-- Product and plugin compatibility requirements.
