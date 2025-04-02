@@ -77,7 +77,8 @@ public class FileComparator {
       String location = getBreakpointLocation(i, file1States, file2States);
 
       // Collect differences for the current breakpoint
-      List<String> differences = getBreakpointDifferences(i, file1States,file1Name, file2States, file2Name);
+      List<String> differences =
+          getBreakpointDifferences(i, file1States, file1Name, file2States, file2Name);
 
       if (differences.isEmpty()) {
         // No differences for this breakpoint
@@ -151,7 +152,11 @@ public class FileComparator {
    * @return A list of strings describing differences, or an empty list if no differences exist.
    */
   private static List<String> getBreakpointDifferences(
-      int index, List<BreakpointState> file1States, String file1Name, List<BreakpointState> file2States, String file2Name) {
+      int index,
+      List<BreakpointState> file1States,
+      String file1Name,
+      List<BreakpointState> file2States,
+      String file2Name) {
     if (index < file1States.size() && index < file2States.size()) {
       return StateComparator.compareBreakpointStates(
           file1States.get(index), file1Name, file2States.get(index), file2Name);
@@ -221,9 +226,10 @@ public class FileComparator {
   }
 
   /**
-   * This helper method checks if the primary file contains extra breakpoints that are not present in the secondary file.
-   * If extra breakpoints are found in the primary file (file1), they are treated as differences and added to the report.
-   * This ensures that breakpoints that exist in the primary file but not the secondary file are captured as part of the comparison.
+   * This helper method checks if the primary file contains extra breakpoints that are not present
+   * in the secondary file. If extra breakpoints are found in the primary file (file1), they are
+   * treated as differences and added to the report. This ensures that breakpoints that exist in the
+   * primary file but not the secondary file are captured as part of the comparison.
    *
    * @param report StringBuilder used to construct the final comparison report.
    * @param primaryStates List of breakpoints for the primary file (e.g., file1).
@@ -232,23 +238,32 @@ public class FileComparator {
    * @param breakpointsWithDiffs List to track breakpoints with differences (used for the summary).
    */
   private static void addExtraBreakpoints(
-          StringBuilder report,
-          List<BreakpointState> primaryStates,
-          List<BreakpointState> secondaryStates,
-          String primaryFileName,
-          List<String> breakpointsWithDiffs) {
+      StringBuilder report,
+      List<BreakpointState> primaryStates,
+      List<BreakpointState> secondaryStates,
+      String primaryFileName,
+      List<String> breakpointsWithDiffs) {
 
-    // Check and add extra breakpoints from the primary file if it has more breakpoints than the secondary
+    // Check and add extra breakpoints from the primary file if it has more breakpoints than the
+    // secondary
     if (primaryStates.size() > secondaryStates.size()) {
       for (int i = secondaryStates.size(); i < primaryStates.size(); i++) {
 
         BreakpointState extraBreakpoint = primaryStates.get(i);
         List<String> extraDifferences = new ArrayList<>();
-        extraDifferences.add("  - Extra Breakpoint in " + primaryFileName + ": " + extraBreakpoint.getFileName() + " at line " + extraBreakpoint.getLineNumber());
+        extraDifferences.add(
+            "  - Extra Breakpoint in "
+                + primaryFileName
+                + ": "
+                + extraBreakpoint.getFileName()
+                + " at line "
+                + extraBreakpoint.getLineNumber());
 
         // Treat the extra breakpoint as a difference and append it
-        appendBreakpointWithDifferences(report, i, getBreakpointLocation(i, primaryStates, secondaryStates), extraDifferences);
-        breakpointsWithDiffs.add("Breakpoint " + (i + 1) + getBreakpointLocation(i, primaryStates, secondaryStates));
+        appendBreakpointWithDifferences(
+            report, i, getBreakpointLocation(i, primaryStates, secondaryStates), extraDifferences);
+        breakpointsWithDiffs.add(
+            "Breakpoint " + (i + 1) + getBreakpointLocation(i, primaryStates, secondaryStates));
       }
     }
   }

@@ -22,7 +22,7 @@ public class CodeComparerStartupActivity implements StartupActivity {
   @Override
   public void runActivity(@NotNull Project project) {
     // Activate the Java Exception Breakpoint for this project
-    ExceptionBreakpointEnabler.activateJavaAnyExceptionBreakpoint(project);
+    ExceptionBreakpointEnabler.activateJavaUncaughtExceptionBreakpoint(project);
 
     // Log a message indicating that the breakpoint activation logic has been executed
     LOGGER.warn("Project loaded: Activated Java Exception Breakpoint.");

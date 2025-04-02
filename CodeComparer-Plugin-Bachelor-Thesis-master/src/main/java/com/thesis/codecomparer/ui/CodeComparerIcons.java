@@ -9,6 +9,6 @@ public class CodeComparerIcons {
     // Only constants
   }
 
-  public static final Icon DIFF_ICON =
-      IconLoader.getIcon("icons/diff.svg", CodeComparerIcons.class);
+  public static final Icon CODECOMPARER_LOGO =
+      IconLoader.getIcon("icons/codeComparerLogo.svg", CodeComparerIcons.class);
 }

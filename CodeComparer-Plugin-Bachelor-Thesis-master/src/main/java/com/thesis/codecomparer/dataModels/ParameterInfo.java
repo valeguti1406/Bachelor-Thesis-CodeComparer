@@ -1,13 +1,13 @@
 package com.thesis.codecomparer.dataModels;
 
 /**
- * Represents a parameter and its value during debugging.
- * This class encapsulates the parameter's name and its serialized value,
- * which provides a structured representation of the variable's state.
+ * Represents a parameter and its value during debugging. This class encapsulates the parameter's
+ * name and its serialized value, which provides a structured representation of the variable's
+ * state.
  */
 public class ParameterInfo {
   private String name; // Name of the parameter as defined in the method signature
-  private String serializedValue; /// Serialized representation of the parameter's value
+  private String serializedValue; // / Serialized representation of the parameter's value
 
   public ParameterInfo(String name, String jsonRepresentation) {
     this.name = name;

@@ -102,7 +102,7 @@ public class DebugSessionListener implements XDebugSessionListener {
     // Create new content for the tab
     final var content =
         ui.createContent(
-            CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.DIFF_ICON, null);
+            CONTENT_ID, uiContainer, "CodeComparer", CodeComparerIcons.CODECOMPARER_LOGO, null);
     content.setCloseable(false); // Prevent closing the tab
 
     // Add the updated UI content
@@ -184,8 +184,7 @@ public class DebugSessionListener implements XDebugSessionListener {
       BreakpointStateCollector breakpointStateCollector, JavaStackFrame javaStackFrame) {
 
     // Collect details of the called method (after stepping into)
-    breakpointState.setInvokedMethodState(
-        breakpointStateCollector.getMethodState(javaStackFrame));
+    breakpointState.setInvokedMethodState(breakpointStateCollector.getMethodState(javaStackFrame));
 
     LOGGER.warn("in collectAndStepOut, step out now");
     stepOut();
@@ -203,7 +202,7 @@ public class DebugSessionListener implements XDebugSessionListener {
           && activeBreakpoint.getType()
               instanceof JavaExceptionBreakpointType) { // breakpoint is a Java Exception Breakpoint
 
-          processJavaExceptionBreakpoint(javaStackFrame);
+        processJavaExceptionBreakpoint(javaStackFrame);
 
       } else { // line breakpoint: Collect the return value
 
@@ -262,7 +261,8 @@ public class DebugSessionListener implements XDebugSessionListener {
       exceptionInfo.setExceptionMessage(exceptionMessage);
       exceptionInfo.setStackTrace(stackTrace);
 
-      codeComparerUI.updateErrorDisplay("Java Exception thrown: " + exceptionInfo.getExceptionType());
+      codeComparerUI.updateErrorDisplay(
+          "Java Exception thrown: " + exceptionInfo.getExceptionType());
       // Save exception info in the BreakpointState
       breakpointState.setExceptionDetails(exceptionInfo);
     } catch (Exception e) {

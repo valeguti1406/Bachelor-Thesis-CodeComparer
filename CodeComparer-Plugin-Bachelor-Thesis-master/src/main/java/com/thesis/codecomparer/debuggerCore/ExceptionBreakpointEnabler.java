@@ -17,11 +17,11 @@ public class ExceptionBreakpointEnabler {
 
   /**
    * Activates the Java Exception Breakpoint for "Any Exception". This method ensures the breakpoint
-   * will suspend the debugger on both caught and uncaught exceptions.
+   * will suspend the debugger on uncaught exceptions.
    *
    * @param project The current project in which the debugger is running.
    */
-  public static void activateJavaAnyExceptionBreakpoint(Project project) {
+  public static void activateJavaUncaughtExceptionBreakpoint(Project project) {
     // Access the XDebuggerManager, which manages debugging sessions and breakpoints for the project
     XDebuggerManager debuggerManager = XDebuggerManager.getInstance(project);
 
@@ -36,8 +36,8 @@ public class ExceptionBreakpointEnabler {
         JavaExceptionBreakpointProperties properties =
             (JavaExceptionBreakpointProperties) breakpoint.getProperties();
         if (properties != null) {
-          // Configure the breakpoint to notify on caught exceptions
-          properties.NOTIFY_CAUGHT = true;
+          // Configure the breakpoint to not notify on caught exceptions
+          properties.NOTIFY_CAUGHT = false;
           // Configure the breakpoint to notify on uncaught exceptions
           properties.NOTIFY_UNCAUGHT = true;
           // Enable the breakpoint in the debugger

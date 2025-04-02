@@ -10,11 +10,11 @@ public class BreakpointState {
   private String fileName; // File where the breakpoint is set
   private int lineNumber; // Line number of the breakpoint
   private MethodState currentMethodState; // Details about the method containing the breakpoint
-  private MethodState
-          invokedMethodState; // Details about the method called at the breakpoint
+  private MethodState invokedMethodState; // Details about the method called at the breakpoint
   private String invokedMethodReturnValue; // Return value of the invoked method at the breakpoint
 
-  private ExceptionDetails exceptionDetails; // Exception details if an exception occurred at the breakpoint
+  private ExceptionDetails
+      exceptionDetails; // Exception details if an exception occurred at the breakpoint
 
   public String getFileName() {
     return fileName;
