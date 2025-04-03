@@ -2,13 +2,7 @@ package com.thesis.codecomparer.debuggerCore;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.intellij.debugger.engine.JavaDebugProcess;
 import com.intellij.debugger.engine.JavaStackFrame;
-import com.intellij.debugger.engine.SuspendContextImpl;
-import com.intellij.debugger.engine.evaluation.EvaluationContextImpl;
-import com.intellij.debugger.impl.DebuggerContextImpl;
-import com.intellij.debugger.impl.DebuggerSession;
-import com.intellij.debugger.impl.DebuggerUtilsEx;
 import com.intellij.debugger.jdi.StackFrameProxyImpl;
 import com.intellij.debugger.settings.DebuggerSettings;
 import com.intellij.debugger.ui.breakpoints.JavaExceptionBreakpointType;
@@ -25,17 +19,13 @@ import com.intellij.xdebugger.XDebugSessionListener;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.impl.XDebugSessionImpl;
 import com.sun.jdi.*;
-import com.sun.jdi.event.ExceptionEvent;
 import com.thesis.codecomparer.dataModels.BreakpointState;
-import com.thesis.codecomparer.dataModels.ExceptionDetails;
 import com.thesis.codecomparer.ui.CodeComparerIcons;
 import com.thesis.codecomparer.ui.CodeComparerUI;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -202,7 +192,8 @@ public class DebugSessionListener implements XDebugSessionListener {
           && activeBreakpoint.getType()
               instanceof JavaExceptionBreakpointType) { // breakpoint is a Java Exception Breakpoint
 
-        processJavaExceptionBreakpoint(javaStackFrame);
+        breakpointState.setExceptionDetails(
+            breakpointStateCollector.processJavaExceptionBreakpoint(javaStackFrame, debugSession));
 
       } else { // line breakpoint: Collect the return value
 
@@ -213,119 +204,6 @@ public class DebugSessionListener implements XDebugSessionListener {
       saveStateToFile(breakpointState);
       resumeProgram();
     }
-  }
-
-  private void processJavaExceptionBreakpoint(JavaStackFrame javaStackFrame) {
-    EvaluationContextImpl evalContext = createEvaluationContext();
-    if (evalContext != null) {
-      SuspendContextImpl suspendContext = evalContext.getSuspendContext();
-      List<ExceptionEvent> exceptionEvents = collectExceptionEvents(suspendContext);
-
-      if (!exceptionEvents.isEmpty()) {
-        ExceptionEvent exceptionEvent = exceptionEvents.get(0);
-        ObjectReference exceptionObject = exceptionEvent.exception();
-        processExceptionObject(javaStackFrame, exceptionObject);
-      }
-    }
-  }
-
-  // Creates the EvaluationContextImpl for the given DebugSession
-  private EvaluationContextImpl createEvaluationContext() {
-    JavaDebugProcess javaDebugProcess = (JavaDebugProcess) debugSession.getDebugProcess();
-    DebuggerSession debuggerSession = javaDebugProcess.getDebuggerSession();
-    DebuggerContextImpl context = debuggerSession.getContextManager().getContext();
-    return context.createEvaluationContext();
-  }
-
-  // Collects ExceptionEvent objects from the SuspendContext
-  private List<ExceptionEvent> collectExceptionEvents(SuspendContextImpl suspendContext) {
-    return DebuggerUtilsEx.getEventDescriptors(suspendContext).stream()
-        .map(pair -> pair.getSecond())
-        .filter(event -> event instanceof ExceptionEvent)
-        .map(event -> (ExceptionEvent) event)
-        .toList();
-  }
-
-  // Processes the ExceptionObject, extracting its details and stack trace
-  private void processExceptionObject(
-      JavaStackFrame javaStackFrame, ObjectReference exceptionObject) {
-    try {
-      // Extract exception details
-      String exceptionType = exceptionObject.referenceType().name();
-      String exceptionMessage = extractExceptionMessage(exceptionObject);
-      String stackTrace = extractStackTrace(javaStackFrame, exceptionObject);
-
-      // Create a new ExceptionDetails object to store exception details
-      ExceptionDetails exceptionInfo = new ExceptionDetails();
-      exceptionInfo.setExceptionType(exceptionType);
-      exceptionInfo.setExceptionMessage(exceptionMessage);
-      exceptionInfo.setStackTrace(stackTrace);
-
-      codeComparerUI.updateErrorDisplay(
-          "Java Exception thrown: " + exceptionInfo.getExceptionType());
-      // Save exception info in the BreakpointState
-      breakpointState.setExceptionDetails(exceptionInfo);
-    } catch (Exception e) {
-      codeComparerUI.updateErrorDisplay("Error processing exception object:" + e);
-    }
-  }
-
-  // Extracts the stack trace from the Throwable object
-  private String extractStackTrace(JavaStackFrame javaStackFrame, ObjectReference exceptionObject)
-      throws Exception {
-    // stackTrace is initialized lazily. To force its initialization, need to explicitly call
-    // methods on the exception object
-    ThreadReference threadReference =
-        javaStackFrame.getStackFrameProxy().threadProxy().getThreadReference();
-    Method getStackTraceMethod =
-        exceptionObject.referenceType().methodsByName("getStackTrace").get(0);
-
-    if (getStackTraceMethod != null) {
-      exceptionObject.invokeMethod(
-          threadReference, getStackTraceMethod, Collections.emptyList(), 0);
-      Field stackTraceField = exceptionObject.referenceType().fieldByName("stackTrace");
-
-      if (stackTraceField != null) {
-        Value stackTraceValue = exceptionObject.getValue(stackTraceField);
-        if (stackTraceValue instanceof ArrayReference arrayRef) {
-          return processStackTraceArray(arrayRef, threadReference);
-        }
-      }
-    }
-    return null;
-  }
-
-  // Processes the stack trace array to retrieve its toString representation
-  private String processStackTraceArray(ArrayReference arrayRef, ThreadReference threadReference)
-      throws Exception {
-    StringBuilder stackTraceBuilder = new StringBuilder();
-
-    for (Value element : arrayRef.getValues()) {
-      if (element instanceof ObjectReference objRef) {
-        Method toStringMethod = objRef.referenceType().methodsByName("toString").get(0);
-
-        if (toStringMethod != null) {
-          Value result =
-              objRef.invokeMethod(threadReference, toStringMethod, Collections.emptyList(), 0);
-          if (result instanceof StringReference) {
-            stackTraceBuilder.append(((StringReference) result).value()).append("\n");
-          }
-        }
-      }
-    }
-    return stackTraceBuilder.toString();
-  }
-
-  // Extracts the exception message from the Throwable object
-  private String extractExceptionMessage(ObjectReference exceptionObject) {
-    Field messageField = exceptionObject.referenceType().fieldByName("detailMessage");
-    if (messageField != null) {
-      Value messageValue = exceptionObject.getValue(messageField);
-      if (messageValue instanceof StringReference) {
-        return ((StringReference) messageValue).value();
-      }
-    }
-    return null;
   }
 
   private void resumeProgram() {

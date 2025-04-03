@@ -7,6 +7,11 @@ package com.thesis.codecomparer.variableSerializer;
  * value types or exceeding the allowed time limit.
  *
  * <p>Extends `RuntimeException` to allow unchecked exceptions during runtime.
+ *
+ * <p>This class is adapted from the Debug Variable Extractor project by chocovon, available at: <a
+ * href="https://github.com/chocovon/debug-variable-extractor">Github</a>
+ *
+ * <p>Original license and copyright apply.
  */
 public class JsonSerializeException extends RuntimeException {
 

@@ -17,6 +17,11 @@ import org.jetbrains.annotations.NotNull;
  *
  * <p>Designed for use in debugging scenarios, where `Value` objects are obtained during a debugging
  * session and need to be converted into a JSON-compatible format for analysis or output.
+ *
+ * <p>This class is adapted from the Debug Variable Extractor project by chocovon, available at: <a
+ * href="https://github.com/chocovon/debug-variable-extractor">Github</a>
+ *
+ * <p>Original license and copyright apply.
  */
 public class ValueJsonSerializer {
 

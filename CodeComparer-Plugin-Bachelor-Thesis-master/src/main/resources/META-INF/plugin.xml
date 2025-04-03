@@ -34,12 +34,4 @@ Identify functional changes in variable states, return values, or exceptions wit
         <listener class="com.thesis.codecomparer.debuggerCore.DebuggerManagerListener"
                   topic="com.intellij.xdebugger.XDebuggerManagerListener"/>
     </projectListeners>
-
-    <actions>
-        <group id="CodeComparer.VisualizerToolbar" popup="false">
-            <action id="StartFileComparer" class="com.thesis.codecomparer.ui.StartFileComparer"
-                    text="Generate a Report: Compare 2 CodeComparer Files">
-            </action>
-        </group>
-    </actions>
 </idea-plugin>

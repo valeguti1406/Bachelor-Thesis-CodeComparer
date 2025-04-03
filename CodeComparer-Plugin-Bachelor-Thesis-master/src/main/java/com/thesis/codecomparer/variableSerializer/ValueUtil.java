@@ -11,6 +11,11 @@ import java.util.List;
  * <p>Provides a mechanism to: - Dynamically invoke methods on objects obtained from the Java Debug
  * Interface (JDI). - Handle method selection, argument validation, and exception handling. - Update
  * the user interface in case of invocation errors.
+ *
+ * <p>This class is adapted from the Debug Variable Extractor project by chocovon, available at: <a
+ * href="https://github.com/chocovon/debug-variable-extractor">Github</a>
+ *
+ * <p>Original license and copyright apply.
  */
 public class ValueUtil {
 
