@@ -30,7 +30,7 @@ public class ValueJsonSerializer {
 
   // The maximum allowed time (in milliseconds) for the JSON serialization process. Default value: 7
   // seconds.
-  private static long timeLimit = 7000;
+  private static final long timeLimit = 7000;
 
   // A timestamp indicating when the serialization process started.
   private static long timeStamp;
@@ -86,9 +86,8 @@ public class ValueJsonSerializer {
       return handleArrayValues(value, thread, refPath);
     }
 
-    if (value instanceof ObjectReference) {
+    if (value instanceof ObjectReference objectValue) {
       Set<String> allInheritedTypes = getAllInheritedTypes(value);
-      ObjectReference objectValue = (ObjectReference) value;
 
       // Handle simple objects like Integer, Boolean, etc.
       if (isSimpleObject(allInheritedTypes)) {
@@ -436,7 +435,9 @@ public class ValueJsonSerializer {
     // Traverse and add all superclasses
     while (type.superclass() != null) {
       type = type.superclass();
-      allInheritedTypes.add(type.name());
+      if (type != null) {
+        allInheritedTypes.add(type.name());
+      }
     }
 
     // Exclude `java.lang.Object` from the result

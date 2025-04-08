@@ -7,7 +7,7 @@ package com.thesis.codecomparer.dataModels;
  */
 public class ParameterInfo {
   private String name; // Name of the parameter as defined in the method signature
-  private String serializedValue; // / Serialized representation of the parameter's value
+  private String serializedValue; // Serialized representation of the parameter's value
 
   public ParameterInfo(String name, String jsonRepresentation) {
     this.name = name;

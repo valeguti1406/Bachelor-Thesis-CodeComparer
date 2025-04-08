@@ -18,7 +18,6 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XDebugSessionListener;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.impl.XDebugSessionImpl;
-import com.sun.jdi.*;
 import com.thesis.codecomparer.dataModels.BreakpointState;
 import com.thesis.codecomparer.ui.CodeComparerIcons;
 import com.thesis.codecomparer.ui.CodeComparerUI;

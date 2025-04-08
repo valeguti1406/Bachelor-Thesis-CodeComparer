@@ -44,6 +44,7 @@ public class ExceptionBreakpointEnabler {
           breakpoint.setEnabled(true);
         }
         // Exit the loop after activating the first matching Java Exception Breakpoint
+        LOGGER.warn("Java Exception Breakpoint activated.");
         return;
       }
     }

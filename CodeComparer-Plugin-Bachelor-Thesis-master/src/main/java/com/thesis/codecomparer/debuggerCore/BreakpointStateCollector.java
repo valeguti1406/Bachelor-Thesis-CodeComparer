@@ -11,7 +11,6 @@ import com.intellij.debugger.impl.DebuggerSession;
 import com.intellij.debugger.impl.DebuggerUtilsEx;
 import com.intellij.debugger.jdi.LocalVariableProxyImpl;
 import com.intellij.debugger.jdi.StackFrameProxyImpl;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.util.Pair;
 import com.intellij.xdebugger.XDebugSession;
 import com.sun.jdi.*;
@@ -33,8 +32,6 @@ import org.jetbrains.annotations.NotNull;
  * stack frame.
  */
 public class BreakpointStateCollector {
-
-  private static final Logger LOGGER = Logger.getInstance(BreakpointStateCollector.class);
 
   private final StackFrameProxyImpl stackFrame; // Current stack frame to analyze
   private final CodeComparerUI codeComparerUI; // UI manager for the CodeComparer tab
