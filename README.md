@@ -1,6 +1,6 @@
 **Project Overview**
 
-CodeComparer is an IntelliJ plugin designed to help developers detect hidden functional changes introduced by third-party library updates. 
+CodeComparer is an IntelliJ IDEA plugin that serves as a prototype implementation of a runtime-based technology for detecting hidden functional changes introduced by third-party library updates.
 Unlike traditional tools like Git diffs or API diff tools, which focus on static code changes, CodeComparer captures runtime behavior during debugging sessions.
 
 The plugin integrates with the IntelliJ Debugger and works passively: developers simply set breakpoints in code they want to monitor—either because it may be affected by a library update or because they want to observe its runtime behavior—and CodeComparer automatically collects detailed runtime data whenever a breakpoint is hit.
